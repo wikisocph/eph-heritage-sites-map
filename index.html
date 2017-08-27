@@ -1,0 +1,1196 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Encyclopedia of Philippine Heritage: Heritage Sites Map</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:400,600,600i,700|Merriweather:300,300i" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.2.0/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.0.6/dist/MarkerCluster.css" />
+<link rel="stylesheet" href="css/leaflet.extra-markers.min.css" />
+<script src="https://unpkg.com/leaflet@1.2.0/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.0.6/dist/leaflet.markercluster.js"></script>
+<script src="js/leaflet.extra-markers.min.js"></script>
+<style>
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  display: flex;
+  align-items: stretch;
+}
+
+.loader {
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  font-size: 10px;
+  text-indent: -9999em;
+  border-top: 5px solid rgba(136, 34, 34, 0.2);
+  border-right: 5px solid rgba(136, 34, 34, 0.2);
+  border-bottom: 5px solid rgba(136, 34, 34, 0.2);
+  border-left: 5px solid #822;
+  transform: translateZ(0);
+  animation: load8 1.1s infinite linear;
+}
+
+@keyframes load8 {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+#panel {
+  display: flex;
+  flex-direction: column;
+  flex: 0 1 500px;
+  height: 100%;
+  background: #822;
+}
+
+#branding {
+  font-family: "Open Sans", sans-serif;
+  -moz-user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+}
+
+#branding p {
+  margin: 20px 20px 0;
+  padding: 0;
+  font-size: 12px;
+  line-height: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: #a65959;
+}
+
+#branding h1 {
+  margin: 5px 20px 15px;
+  padding: 0;
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 24px;
+  color: #fff;
+}
+
+nav ul {
+  list-style: none;
+  margin: 0 20px;
+  padding: 0;
+  -moz-user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+}
+
+nav li {
+  display: inline-block;
+  margin: 0;
+  padding: 0;
+}
+
+nav li a {
+  display: block;
+  position: relative;
+  margin: 0 12px 0 0;
+  padding: 6px 12px 6px 16px;
+  font-size: 12px;
+  line-height: 12px;
+  font-family: "Open Sans", sans-serif;
+  font-weight: 700;
+  border-radius: 6px 6px 0 0;
+  background: #a65959;
+  color: #600;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition-property: background;
+  transition-duration: 0.3s;
+}
+
+nav li a:hover {
+  background: #c49090;
+}
+
+nav li a::after {
+  content: '';
+  display: inline-block;
+  position: absolute;
+  top: 0; right: -8px;
+  width: 15px;
+  height: 24px;
+  border-radius: 0 6px 0 0;
+  background: inherit;
+  transform: skew(30deg);
+}
+
+nav li.selected a {
+  background: #fff;
+}
+
+#init {
+  flex: 1;
+  margin: 0 0 20px 0;
+  padding: 20px;
+  background: #fff;
+}
+
+#init .loader {
+  margin: 20px auto;
+}
+
+.panel-content {
+  flex: 1;
+  margin: 0 0 20px 0;
+  overflow-y: auto;
+  background: #fff;
+}
+
+#index {
+  display: none;
+  flex-direction: column;
+  font-family: "Open Sans", sans-serif;
+  -moz-user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+}
+
+#index header {
+  padding: 20px 20px 10px;
+}
+
+#index header p {
+  margin: 0;
+  color: #444;
+  font-size: 12px;
+  line-height: 12px;
+  font-weight: 400;
+}
+
+#sort {
+  margin-top: 10px;
+  padding: 6px 12px;
+  width: 250px;
+  border-radius: 25px;
+  border: none;
+  font-size: 12px;
+  line-height: 12px;
+  font-weight: 700;
+  text-align: center;
+  text-transform: uppercase;
+  background: #822;
+  color: #ecc;
+  cursor: pointer;
+  transition-property: background, color;
+  transition-duration: 0.3s;
+}
+#sort::-moz-focus-inner { border: none; }
+#sort:hover {
+  color: #fff;
+  background: #a68c59;
+}
+
+#site-list {
+  list-style: none;
+  flex: 1;
+  overflow-y: auto;
+  margin: 0;
+  padding: 10px 0;
+  background: #f3e9e9;
+}
+
+#site-list li {
+  margin: 0;
+  padding: 0;
+  transition-property: background, box-shadow;
+  transition-duration: 0.3s;
+}
+#site-list li:hover {
+  background: #eaa;
+  box-shadow: 0 -1px #eaa;
+}
+
+#site-list li a {
+  display: block;
+  margin: 0 20px;
+  padding: 5px 0;
+  border-bottom: 1px solid #eaa;
+  font-size: 12.5px;
+  line-height: 22px;
+  font-weight: 400;
+  text-decoration: none;
+  color: #000;
+}
+
+#site-list li:last-child a {
+  border-bottom: none;
+}
+
+#details {
+  display: none;
+  padding: 20px;
+}
+
+#details .main-wikidata-link {
+  display: block;
+  float: right;
+  margin: 0 0 0 20px;
+}
+
+#details h1 {
+  margin: 0 0 20px;
+  padding: 0 0 10px;
+  font-size: 24px;
+  line-height: 24px;
+  font-family: "Open Sans", sans-serif;
+  font-weight: 600;
+  border-bottom: 1px solid #eaa;
+  color: #611;
+}
+
+#details h1 .subtitle {
+  font-size: 0.75em;
+}
+#details h1 .subtitle::before {
+  content: '\a';
+  white-space: pre;
+}
+
+#details h1.untitled {
+  font-style: italic;
+}
+
+#details p, #details li {
+  font-size: 12.5px;
+  line-height: 22px;
+  font-family: Merriweather, serif;
+}
+
+#details p {
+  margin: 0 0 10px 0;
+  padding: 0;
+}
+
+#details figure {
+  float: right;
+  margin: 0 0 20px 0;
+  padding: 0;
+  width: 156px;
+  font-size: 13px;
+  line-height: 20px;
+  font-family: Merriweather, serif;
+  background: #eee;
+  transition-property: height;
+  transition-duration: 0.5s;
+}
+
+#details figure .loader {
+  margin: 20px auto;
+}
+
+#details figure.nodata {
+  height: 100px;
+  line-height: 100px;
+  text-align: center;
+  font-style: italic;
+  color: #888;
+}
+
+#details figure > a {
+  display: block;
+  padding: 2px;
+  border: 1px solid #ade;
+  text-decoration: none;
+}
+
+#details figure img {
+  display: block;
+}
+
+#details figcaption {
+  display: block;
+  padding: 5px 0 0 0;
+  font-size: 10px;
+  line-height: 18px;
+  color: #888;
+  background: #fff;
+  font-family: "Open Sans", sans-serif;
+  font-weight: 400;
+}
+
+#details figcaption a {
+  border-bottom: 1px dotted #ccc;
+  text-decoration: none;
+  color: #888;
+}
+#details figcaption a:hover {
+  background: #eee;
+  border-bottom: 1px solid #eee;
+}
+
+#details .article {
+  padding: 0 170px 0 0;
+}
+
+#details .article.loading {
+  margin: 40px 0;
+}
+
+#details .article .loader {
+  margin: 0 auto;
+}
+
+#details .article.nodata {
+  font-style: italic;
+  color: #888;
+}
+
+#details .article p:first-child {
+  margin-top: -5px;
+}
+
+#details h2 {
+  clear: right;
+  margin: 20px 0 5px 0;
+  padding-top: 20px;
+  border-top: 1px solid #eaa;
+  font-size: 12px;
+  line-height: 12px;
+  font-family: "Open Sans", sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: #d88;
+}
+
+#details p+h2 {
+  margin-top: 15px;
+}
+
+#details p.nodata {
+  font-style: italic;
+  color: #888;
+}
+
+#details .wikipedia-link a {
+  line-height: 20px;
+  display: inline-block;
+  border: none;
+  text-decoration: none;
+  color: #a22;
+}
+#details .wikipedia-link a:hover {
+  background: #eee;
+}
+
+#details .wikipedia-link img {
+  vertical-align: middle;
+}
+
+#details .designations {
+  margin: 15px 0 0 0;
+  padding: 0;
+}
+
+#details .designations li {
+  position: relative;
+  list-style: none;
+  padding-left: 65px;
+  min-height: 65px;
+}
+
+#details .designations li strong {
+  display: block;
+}
+
+#details .designations img {
+  position: absolute;
+  top: 0; left: 0;
+  width: 50px;
+  height: 50px;
+}
+
+#details p.address {
+  padding: 0 170px 0 0;
+}
+
+#about {
+  display: none;
+  padding: 20px;
+}
+
+#about #eph {
+  float: right;
+  margin: 0 0 10px 10px;
+}
+
+#about p {
+  margin: 0 0 10px 0;
+  padding: 0;
+  font-size: 12.5px;
+  line-height: 22px;
+  font-family: Merriweather, serif;
+}
+
+#about p a {
+  border-bottom: 1px dotted #ccc;
+  text-decoration: none;
+  color: #666;
+}
+#about p a:hover {
+  border-bottom: 1px solid #eee;
+  background: #eee;
+}
+
+#map {
+  flex: 1;
+}
+
+.marker-cluster {
+  background-clip: padding-box;
+  border-radius: 20px;
+}
+
+.marker-cluster div {
+  margin: 5px 0 0 5px;
+  width: 30px;
+  height: 30px;
+  text-align: center;
+  border-radius: 15px;
+  font: 12px "Open Sans", sans-serif;
+  font-weight: bold;
+}
+
+.marker-cluster span {
+  line-height: 30px;
+  color: #fff;
+}
+
+.marker-cluster-small      { background-color: rgba(204, 68, 68, 0.5); }
+.marker-cluster-small  div { background-color: rgba(204, 68, 68, 0.8); }
+.marker-cluster-medium     { background-color: rgba(170, 51, 51, 0.5); }
+.marker-cluster-medium div { background-color: rgba(170, 51, 51, 0.8); }
+.marker-cluster-large      { background-color: rgba(136, 34, 34, 0.5); }
+.marker-cluster-large  div { background-color: rgba(136, 34, 34, 0.8); }
+
+.leaflet-popup-content-wrapper, .leaflet-popup-tip {
+  background: #822;
+  user-select: none;
+  -moz-user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+}
+
+.leaflet-popup-content {
+  font: 600 18px/20px "Open Sans", sans-serif;
+  text-transform: uppercase;
+  color: white;
+  text-align: center;
+}
+
+.leaflet-popup-content .subtitle {
+  padding: 2px 0 0;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 700;
+}
+
+/* Match Leaflet's control style */
+.powered {
+  line-height: 0.5;
+  background: #fff;
+  box-shadow: 0 1px 5px rgba(0,0,0,0.65);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+</style>
+</head>
+<body>
+<section id="panel">
+  <header id="branding" role="banner">
+    <p>Encyclopedia of Philippine Heritage</p>
+    <h1>Heritage Sites Map</h1>
+  </header>
+  <nav>
+    <ul>
+      <li><a href="#index">Index</a></li>
+      <li><a href="#about">About</a></li>
+    </ul>
+  </nav>
+  <div id="init"><div class="loader"></div></div>
+  <section id="index" class="panel-content" data-display="flex">
+    <header>
+      <p id="stats"></p>
+      <button id="sort"></button>
+    </header>
+    <ol id="site-list"></ol>
+  </section>
+  <section id="details" class="panel-content" data-display="block">
+  </section>
+  <aside id="about" class="panel-content" data-display="block">
+    <section>
+      <p>This <b>Heritage Sites Map</b> shows the location of designated cultural and heritage sites of the Philippines.
+        Each heritage site is represented by a map marker that when clicked provides more information about the site.</p>
+      <img id="eph" src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/Encyclopedia_of_Philippine_Heritage_logo.svg/125px-Encyclopedia_of_Philippine_Heritage_logo.svg.png" alt="Encyclopedia of Philippine Heritage">
+      <p>The data on these heritage sites comes from <a href="https://www.wikidata.org/">Wikidata</a>, a sister
+        project of Wikipedia, and is compiled as part of the <i><b>Encyclopedia of Philippine Heritage</b></i>, a
+        program of <a href="http://www.wikimedia.org.ph/">Wikimedia Philippines</a>.</p>
+      <p>If you are familiar with the Wikidata Query Service and want to obtain or explore the raw data, please refer
+        to this <a href="#" id="wdqs-link">query</a>.</p>
+      <p>To report bugs, suggest improvements, or see the source code of this map app, please refer to this app’s
+        <a href="https://github.com/WMPH/eph-heritage-sites-map">GitHub repository</a>.</p>
+    </section>
+    <footer>
+      <a href="https://www.wikidata.org/"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/66/Wikidata-logo-en.svg/85px-Wikidata-logo-en.svg.png" alt="[Wikidata]"></a>
+      <a href="http://www.wikimedia.org.ph/"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Wikimedia_Philippines.svg/60px-Wikimedia_Philippines.svg.png" alt="[Wikimedia Philippines]"></a>
+    </footer>
+  </aside>
+</section>
+<section id="map">
+</section>
+<script>
+'use strict';
+
+// Constants and fixed parameters
+const ORGS = {
+  NHCP   : 'National Historical Commission of the Philippines',
+  NM     : 'National Museum',
+  DENR   : 'Department of Environment and Natural Resources',
+  WHC    : 'UNESCO World Heritage Committee',
+  RAMSAR : 'Ramsar Convention',
+  ASEAN  : 'ASEAN Center for Biodiversity',
+}
+const DESIGNATION_TYPES = {
+  Q23677505 : { org: 'NHCP'  , name: 'National Historical Landmark'  },
+  Q25927302 : { org: 'NHCP'  , name: 'National Shrine'               },
+  Q36348834 : { org: 'NHCP'  , name: 'National Monument'             },
+  Q36352489 : { org: 'NHCP'  , name: 'Heritage House'                },
+  Q24189292 : { org: 'NM'    , name: 'National Cultural Treasure'    },
+  Q25036854 : { org: 'NM'    , name: 'Important Cultural Property'   },
+  Q25927309 : { org: 'DENR'  , name: 'National Geological Monument'  },
+  Q9259     : { org: 'WHC'   , name: 'World Heritage Site'           },
+  Q17278671 : { org: 'WHC'   , name: 'Tentative World Heritage Site' },
+  Q20905436 : { org: 'RAMSAR', name: 'Ramsar Site'                   },
+  Q4654172  : { org: 'ASEAN' , name: 'ASEAN Heritage Park'           },
+}
+const NL = '\n';
+const SPARQL_QUERY =
+'SELECT ?site ?siteLabel ?coord ?designation ?partSite ?partSiteLabel ?image ?siteArticle WHERE {' + NL +
+'  ?site p:P625 ?coordStatement .' + NL +
+'  ?coordStatement ps:P625 ?coord .' + NL +
+'  OPTIONAL {' + NL +
+'    ?site wdt:P527 ?partSite .' + NL +
+'    ?coordStatement pq:P518 ?coordPart .' + NL +
+'    FILTER (?coordPart = ?partSite)' + NL +
+'  }' + NL +
+'  OPTIONAL { ?site wdt:P18 ?image }' + NL +
+'  {' + NL +
+'    ?site wdt:P1435 ?designation .' + NL +
+'    FILTER (' + NL +
+'      ?designation = wd:Q23677505 ||  # National Historical Landmark' + NL +
+'      ?designation = wd:Q25927302 ||  # National Shrine' + NL +
+'      ?designation = wd:Q36348834 ||  # National Monument' + NL +
+'      ?designation = wd:Q36352489 ||  # Heritage House' + NL +
+'      ?designation = wd:Q24189292 ||  # National Cultural Treasure' + NL +
+'      ?designation = wd:Q25036854 ||  # Important Cultural Property' + NL +
+'      ?designation = wd:Q25927309     # National Geological Monument' + NL +
+'    )' + NL +
+'  }' + NL +
+'  UNION' + NL +
+'  {' + NL +
+'    ?site wdt:P1435 ?designation ;' + NL +
+'          wdt:P17 wd:Q928 .' + NL +
+'    FILTER (' + NL +
+'      ?designation = wd:Q9259     ||  # World Heritage Site' + NL +
+'      ?designation = wd:Q17278671 ||  # tentative World Heritage Site' + NL +
+'      ?designation = wd:Q20905436 ||  # Ramsar Site' + NL +
+'      ?designation = wd:Q4654172      # ASEAN Heritage Park' + NL +
+'    )' + NL +
+'  }' + NL +
+'  OPTIONAL {' + NL +
+'    ?siteArticle schema:about ?site ;' + NL +
+'                 schema:isPartOf <https://en.wikipedia.org/> .' + NL +
+'  }' + NL +
+'  SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }' + NL +
+'}';
+const SPARQL_QUERY_ESCAPED   = escape(SPARQL_QUERY);
+const WDQS_API_URL           = 'https://query.wikidata.org/sparql';
+const WDQS_GUI_URL           = 'https://query.wikidata.org/#' + SPARQL_QUERY_ESCAPED;
+const YEAR_PRECISION         = '9';
+const TILE_LAYER_URL         = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+const TILE_LAYER_ATTRIBUTION = 'Base map &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>';
+const TILE_LAYER_MAX_ZOOM    = 19;
+const MIN_PH_LAT             =   4.5;
+const MAX_PH_LAT             =  21.0;
+const MIN_PH_LON             = 116.5;
+const MAX_PH_LON             = 126.5;
+const SORT_MODES             = [
+  { id: 'alpha', label: 'alphabetically'  },
+  { id: 'qid',   label: 'by Wikidata QID' },
+];
+
+// Globals
+var Sites = {};  // Hash to contain data about the heritage sites
+var Map;         // Leaflet map object
+var Cluster;     // Leaflet map cluster
+var CurrentSortModeIdx;
+var AppIsInitialized;
+
+// ------------------------------------------------------------
+
+// This initializes the app once the page has been loaded.
+function init() {
+
+  initMap();
+
+  // Add Wikidata Query Service GUI URL
+  let anchorElem = document.getElementById('wdqs-link');
+  anchorElem.href = WDQS_GUI_URL;
+
+  // Query Wikidata
+  let xhrObject = new XMLHttpRequest();
+  xhrObject.onreadystatechange = processWikidataQuery;
+  xhrObject.open('POST', WDQS_API_URL, true);
+  xhrObject.overrideMimeType('text/plain');
+  xhrObject.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+  xhrObject.send('format=json&query=' + SPARQL_QUERY_ESCAPED);
+
+  window.addEventListener('hashchange', processHashChange);
+}
+
+
+// This initializes the Leaflet-based map.
+function initMap() {
+
+  // Create map and set initial view
+  Map = new L.map('map');
+  Map.fitBounds([[MAX_PH_LAT, MAX_PH_LON], [MIN_PH_LAT, MIN_PH_LON]]);
+
+  // Add specified tile layer
+  new L.tileLayer(TILE_LAYER_URL, {
+    attribution : TILE_LAYER_ATTRIBUTION,
+    maxZoom     : TILE_LAYER_MAX_ZOOM,
+  }).addTo(Map);
+
+  // Add powered by Wikidata map control
+  let powered = L.control({ position: 'bottomleft' });
+  powered.onAdd = function(Map) {
+    var divElem = L.DomUtil.create('div', 'powered');
+    divElem.innerHTML =
+      '<a href="https://www.wikidata.org/"><img src="img/powered_by_wikidata.png"></a>';
+    return divElem;
+  };
+  powered.addTo(Map);
+
+  // Initialize the map marker cluster
+  Cluster = new L.markerClusterGroup({
+    maxClusterRadius: function(z) {
+      if (z <= 15) return 50;
+      if (z <= 16) return 40;
+      if (z == 17) return 30;
+      if (z == 18) return 20;
+      if (z >= 19) return 10;
+    },
+  }).addTo(Map);
+
+  // Add event handler
+  Map.on('popupopen', function(e) { displaySiteDetails(e.popup._qid) });
+}
+
+
+// This is the AJAX event handler for the Wikidata query and
+// also completes the app initialization.
+function processWikidataQuery() {
+
+  if (this.readyState !== this.DONE || this.status !== 200) return;
+
+  var data = JSON.parse(this.responseText);
+
+  // Go through each query result and populate the Sites database
+  data.results.bindings.forEach(function(result) {
+    let qid = getQid(result.site);
+    if (!(qid in Sites)) {
+      if ('partSite' in result) {
+        Sites[qid] = new CompoundSiteRecord;
+      }
+      else {
+        Sites[qid] = new SiteRecord;
+      }
+    }
+    let record = Sites[qid];
+    processQueryResult(result, record);
+  });
+
+  // Do post-processing
+  let initBounds = [[90, 180], [-90, -180]];
+  Object.keys(Sites).forEach(function(qid) { postProcessRecord(qid, initBounds) });
+
+  // Update stats
+  let numSites = Object.keys(Sites).length;
+  document.getElementById('stats').innerHTML = 'Showing a total of ' + numSites + ' sites';
+
+  // Re-initialize the map view to display the permalinked site or
+  // to fit the Philippine sites
+  let fragment = window.location.hash.replace('#', '');
+  if (fragment in Sites) {
+    let record = Sites[fragment];
+    Map.setView([record.lat, record.lon], TILE_LAYER_MAX_ZOOM);
+  }
+  else {
+    Map.fitBounds(new L.LatLngBounds(initBounds[0], initBounds[1]));
+  }
+
+  // Enable the index sort button and add click event handler,
+  // and perform the initial sort
+  let elem = document.getElementById('sort');
+  elem.disabled = false;
+  elem.addEventListener('click', switchSortMode);
+  CurrentSortModeIdx = SORT_MODES.length - 1;
+  switchSortMode();
+
+  // Remove the app initialization spinner and activate the hashchange handler
+  AppIsInitialized = true;
+  document.getElementById('init').remove();
+  processHashChange();
+}
+
+
+// This takes a query result and its corresponding record and updates that
+// record with any new data provided in the result.
+function processQueryResult(result, record) {
+
+  if ('siteLabel' in result && result.siteLabel.value) {
+    record.title = result.siteLabel.value;
+  }
+  else {
+    record.title = null;
+  }
+
+  let designationQid = getQid(result.designation);
+
+  let wktBits = result.coord.value.split(/\(|\)| /);  // Note: format is Point WKT
+  if (record.isCompound) {
+
+    let partQid = getQid(result.partSite);
+    record.parts.push(partQid);
+
+    let partRecord;
+    if (partQid in Sites) {
+      partRecord = Sites[partQid];
+    }
+    else {
+      partRecord = new SiteRecord;
+      Sites[partQid] = partRecord;
+      partRecord.title = result.partSiteLabel.value || result.siteLabel.value;
+      partRecord.lat = parseFloat(wktBits[2]);
+      partRecord.lon = parseFloat(wktBits[1]);
+    }
+
+    let partDesignation;
+    if (designationQid in partRecord.designations) {
+      partDesignation = partRecord.designations[designationQid];
+    }
+    else {
+      partDesignation = new Designation();
+      partRecord.designations[designationQid] = partDesignation;
+    }
+    partDesignation.partOfQid = getQid(result.site);
+    // TODO: Set partDesignation.date here
+  }
+  else {
+    record.lat = parseFloat(wktBits[2]);
+    record.lon = parseFloat(wktBits[1]);
+  }
+
+  let designation;
+  if (designationQid in record.designations) {
+    designation = record.designations[designationQid];
+  }
+  else {
+    designation = new Designation();
+    record.designations[designationQid] = designation;
+  }
+
+  // TODO: Set designation.date here if it is empty
+  if (!designation.date) {
+  }
+
+  if ('image' in result) {
+    record.imageFilename = extractImageFilename(result.image);
+  }
+
+  if ('siteArticle' in result) {
+    record.articleTitle = result.siteArticle.value
+      .replace('https://en.wikipedia.org/wiki/', '')
+      .replace(/_/g, ' ');
+  }
+}
+
+
+// This takes a heritage site QID and the initial bounding box and
+// cleans up the corresponding record, generates a map marker and index entry
+// for the heritage site, and updates the bounding box as needed.
+function postProcessRecord(qid, initBounds) {
+
+  let record = Sites[qid];
+
+  // Clean up record
+
+  // Create a map marker and add to the cluster
+  if (!record.isCompound) {
+    let mapMarker = L.marker([record.lat, record.lon], {
+      icon: L.ExtraMarkers.icon({ icon: '', markerColor : 'orange-dark' })
+    });
+    mapMarker.bindPopup(record.title, { closeButton: false });
+    Cluster.addLayer(mapMarker);
+    record.mapMarker = mapMarker;
+    let popup = mapMarker.getPopup();
+    popup._qid = qid;
+    record.popup = popup;
+  }
+
+  // Create an index entry and add to the index
+  let li = document.createElement('li');
+  li.innerHTML = '<a href="#' + qid + '">' + record.title + '</a>';
+  document.getElementById('site-list').appendChild(li);
+  record.indexLi = li;
+
+  // Update the bounding box containing all the heritage sites in the
+  // Philippines
+  if (
+    !record.isCompound &&
+    MIN_PH_LAT <= record.lat && record.lat <= MAX_PH_LAT &&
+    MIN_PH_LON <= record.lon && record.lon <= MAX_PH_LON
+  ) {
+    initBounds[0][0] = Math.min(record.lat, initBounds[0][0]);
+    initBounds[0][1] = Math.min(record.lon, initBounds[0][1]);
+    initBounds[1][0] = Math.max(record.lat, initBounds[1][0]);
+    initBounds[1][1] = Math.max(record.lon, initBounds[1][1]);
+  }
+}
+
+
+// This takes a heritage site QID and updates the map to show the
+// corresponding map marker, opens its popup if it isn't open yet, and
+// displays the site's details on the side panel.
+function activateSite(qid) {
+  let record = Sites[qid];
+  if (record.isCompound) {
+    // TODO: enhance in the future to show all sites
+    displaySiteDetails(qid);
+  }
+  else {
+    Cluster.zoomToShowLayer(record.mapMarker, function() {
+      Map.setView([record.lat, record.lon], Map.getZoom());
+      if (record.popup.isOpen()) {
+        displaySiteDetails(qid);
+      }
+      else {
+        record.mapMarker.openPopup();
+      }
+    });
+  }
+}
+
+
+// This function displays the heritage site's details on the side panel.
+function displaySiteDetails(qid) {
+
+  let record = Sites[qid];
+
+  if (!record.panelElem) generateSiteDetails(qid, record);
+
+  displayPanelContent('details');
+  let detailsElem = document.querySelector('#details');
+  detailsElem.replaceChild(record.panelElem, detailsElem.childNodes[0]);
+  window.location.hash = '#' + qid;
+}
+
+
+// This generates the details content of a heritage site for the side panel.
+function generateSiteDetails(qid, record) {
+
+  let titleHtml = '<h1>' + record.title + '</h1>';
+
+  let figureHtml = '';
+  if (record.imageFilename) {
+    figureHtml = '<figure><div class="loader"></div></figure>';
+  }
+  else {
+    figureHtml = '<figure class="nodata">No photo available</figure>';
+  }
+
+  let articleHtml;
+  if (record.articleTitle) {
+    articleHtml = '<div class="article"><div class="loader"></div></div>';
+  }
+  else {
+    articleHtml = '<div class="article nodata"><p>This historical site has no Wikipedia article.</p></div>';
+  }
+
+  let designationsHtml = '<h2>Designations</h2><ul class="designations">';
+  Object.keys(record.designations).forEach(function(designationQid) {
+    let type = DESIGNATION_TYPES[designationQid];
+    let designation = record.designations[designationQid];
+    designationsHtml +=
+      '<li><img src="img/org_logo_' + type.org.toLowerCase() + '.svg"> ' +
+      '<strong>' + ORGS[type.org] + '</strong> ' +
+      '<span>' + type.name + '</span></li>';
+  });
+  designationsHtml += '</ul>';
+
+  let detailsHtml =
+    '<a class="main-wikidata-link" href="https://www.wikidata.org/wiki/' + qid + '" title="View in Wikidata">' +
+    '<img src="img/wikidata_tiny_logo.png" alt="[view Wikidata item]" /></a>' +
+    titleHtml +
+    figureHtml +
+    articleHtml +
+    designationsHtml;
+
+  let panelElem = document.createElement('div');
+  panelElem.innerHTML = detailsHtml;
+  record.panelElem = panelElem;
+
+  // Load lazy content
+  if (record.imageFilename) displayFigure(record.imageFilename, panelElem.querySelector('figure'));
+  if (record.articleTitle) displayArticleExtract(record.articleTitle, panelElem.querySelector('.article'));
+
+}
+
+
+// This takes an English Wikipedia article title and a div element and retrieves
+// an extract of the article and places it into the element.
+function displayArticleExtract(title, elem) {
+  let url =
+    'https://en.wikipedia.org/w/api.php?action=query' +
+    '&prop=extracts&exintro=1&format=json' +
+    '&titles=' + title;
+  loadJSONP(url, function(data) {
+    let pageId = Object.keys(data.query.pages)[0];
+    let html = data.query.pages[pageId].extract.match(/<p[^]+?<\/p>/)[0];
+    elem.innerHTML = html +
+      '<p class="wikipedia-link">' +
+      '<a href="https://en.wikipedia.org/wiki/' + title.replace(' ', '_') + '">' +
+      '<img src="img/wikipedia_tiny_logo.png" alt="" /> Read more on Wikipedia</a></p>';
+    elem.classList.remove('loading');
+  });
+}
+
+
+// This takes a Commons image filename and a figure HTML element and populates
+// the element with the 150-pixel wide image and any required attribution inside
+// a figcaption element.
+function displayFigure(filename, figure) {
+
+  var url;
+
+  // Fetch the image thumbnail
+  url =
+    'https://commons.wikimedia.org/w/api.php?action=query' +
+    '&prop=imageinfo&iiprop=url&iiurlwidth=150&format=json' +
+    '&titles=File:' + filename;
+  loadJSONP(url, function(data) {
+    let pageId = Object.keys(data.query.pages)[0];
+    let imageInfo = data.query.pages[pageId].imageinfo[0];
+    let img = document.createElement('img');
+    img.src = imageInfo.thumburl;
+    let anchor = document.createElement('a');
+    anchor.href = imageInfo.descriptionurl;
+    anchor.style.height = imageInfo.thumbheight + 'px';
+    anchor.appendChild(img);
+    figure.replaceChild(anchor, figure.childNodes[0]);  // replace spinner
+  });
+
+  // Fetch the image attribution and see if it is needed
+  url =
+    'https://commons.wikimedia.org/w/api.php?action=query' +
+    '&prop=imageinfo&iiprop=extmetadata&format=json' +
+    '&titles=File:' + filename;
+  loadJSONP(url, function(data) {
+    let pageId = Object.keys(data.query.pages)[0];
+    let metadata = data.query.pages[pageId].imageinfo[0].extmetadata;
+    let artistHtml = metadata.Artist.value;
+    if (artistHtml.search('href="//') >= 0) {
+      artistHtml = artistHtml.replace(/href="(?:https?:)?\/\//, 'href="https://');
+    }
+    let licenseHtml = '';
+    if ('AttributionRequired' in metadata && metadata.AttributionRequired.value === 'true') {
+      licenseHtml = metadata.LicenseShortName.value.replace(/ /g, '&nbsp;');
+      if ('LicenseUrl' in metadata) {
+        licenseHtml = '<a href="' + metadata.LicenseUrl.value + '">' + licenseHtml + '</a>';
+      }
+      licenseHtml = '<br>' + licenseHtml;
+    }
+    figure.insertAdjacentHTML('beforeend', '<figcaption>' + artistHtml + licenseHtml + '</figcaption>');
+  });
+}
+
+
+// This event handler handles any change in the window URL hash
+function processHashChange() {
+
+  if (!AppIsInitialized) return;
+
+  let fragment = window.location.hash.replace('#', '');
+  if (fragment in Sites) {
+    activateSite(fragment);
+  }
+  else if (fragment === 'about') {
+    displayPanelContent('about');
+  }
+  else {
+    displayPanelContent('index');
+  }
+}
+
+
+// This displays the element with the specified ID on the side panel and
+// updates the navigation menu state as well.
+function displayPanelContent(contentId) {
+  document.querySelectorAll('.panel-content').forEach(function(content) {
+    content.style.display = (content.id === contentId) ? content.dataset.display : 'none';
+  });
+  document.querySelectorAll('nav li').forEach(function(li) {
+    if (li.childNodes[0].getAttribute('href') === '#' + contentId) {
+      li.classList.add('selected');
+    }
+    else {
+      li.classList.remove('selected');
+    }
+  });
+}
+
+
+// This toggles the sort mode and then sorts the index list.
+function switchSortMode() {
+
+  CurrentSortModeIdx = (CurrentSortModeIdx + 1) % SORT_MODES.length;
+  document.getElementById('sort').innerHTML =
+    'Sort list ' + SORT_MODES[(CurrentSortModeIdx + 1) % SORT_MODES.length].label;
+
+  let sorter = function(getKey, compareKey) {
+    return Object.keys(Sites)
+      .map(function(el) {
+        return { key: getKey(el), item: Sites[el].indexLi };
+      })
+      .sort(compareKey)
+      .map(function(el) { return el.item });
+  };
+
+  let lis;
+  if (SORT_MODES[CurrentSortModeIdx].id === 'alpha') {
+    lis = sorter(
+      function(el) { return Sites[el].title.replace(/^[^A-Za-z0-9]/, ''); },
+      function(a, b) { return a.key > b.key ? 1 : -1; }
+    );
+  }
+  else { // 'qid'
+    lis = sorter(
+      function(el) { return Number(el.substring(1)); },
+      function(a, b) { return a.key - b.key; }
+    );
+  }
+
+  let list = document.getElementById('site-list');
+  list.innerHTML = '';
+  lis.forEach(function(li) { list.appendChild(li); });
+}
+
+
+// This takes a WDQS query result Wikidata item data and returns the
+// item's QID.
+function getQid(queryItem) {
+  if (!queryItem) return '';
+  return queryItem.value.split('/')[4];
+}
+
+
+// This takes a WDQS query result image data and returns the image filename.
+function extractImageFilename(image) {
+  return image.value.replace(/https?:\/\/commons\.wikimedia\.org\/wiki\/Special:FilePath\//, '');
+}
+
+// ------------------------------------------------------------
+
+// Library function to load JSONP data
+// Adapted from https://gist.github.com/gf3/132080/110d1b68d7328d7bfe7e36617f7df85679a08968
+var loadJSONP = (function(){
+  var unique = 0;
+  return function(url, callback) {
+
+    // Create unique function name
+    let name = '_jsonp_' + unique++;
+
+    // Create script element
+    let script = document.createElement('script');
+    script.type = 'text/javascript';
+    script.src = url + '&callback=' + name;
+
+    // Setup handler
+    window[name] = function(data) {
+      callback.call(window, data);
+
+      // Clean up
+      script.remove();
+      script = null;
+      delete window[name];
+    };
+
+    // Load JSON
+    document.getElementsByTagName('head')[0].appendChild(script);
+  };
+})();
+
+// ------------------------------------------------------------
+
+// Class declaration for representing a site's heritage designation
+function Designation() {
+  this.date          = undefined;
+  this.datePrecision = undefined;
+  this.partOfQid     = null;
+  // TODO: add links to external info about the designation such as
+  // the WHS page or the resolution that created the designation
+}
+
+// Class declaration for representing an individual heritage site
+function SiteRecord() {
+  this.isCompound    = false;
+  this.title         = '';
+  this.imageFilename = '';
+  this.articleTitle  = '';
+  this.designations  = {};
+  this.panelElem     = undefined;
+  this.indexLi       = undefined;
+  this.lat           = 0;
+  this.lon           = 0;
+  this.location      = '';
+  this.mapMarker     = undefined;
+  this.popup         = undefined;
+}
+
+// Class declaration for representing an compound heritage site
+function CompoundSiteRecord() {
+  this.isCompound    = true;
+  this.title         = '';
+  this.parts         = [];
+  this.imageFilename = '';
+  this.articleTitle  = '';
+  this.designations  = {};
+  this.panelElem     = undefined;
+  this.indexLi       = undefined;
+}
+
+// ------------------------------------------------------------
+
+init();
+
+</script>
+</body>
+</html>
