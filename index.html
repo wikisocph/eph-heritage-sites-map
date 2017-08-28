@@ -831,9 +831,7 @@ function processQueryResult(result, record) {
   }
 
   if ('siteArticle' in result) {
-    record.articleTitle = result.siteArticle.value
-      .replace('https://en.wikipedia.org/wiki/', '')
-      .replace(/_/g, ' ');
+    record.articleTitle = unescape(result.siteArticle.value).replace('https://en.wikipedia.org/wiki/', '');
   }
 }
 
@@ -993,7 +991,7 @@ function displayArticleExtract(title, elem) {
       let html = data.query.pages[pageId].extract.match(/<p[^]+?<\/p>/)[0];
       elem.innerHTML = html +
         '<p class="wikipedia-link">' +
-        '<a href="https://en.wikipedia.org/wiki/' + title.replace(' ', '_') + '">' +
+        '<a href="https://en.wikipedia.org/wiki/' + escape(title) + '">' +
         '<img src="img/wikipedia_tiny_logo.png" alt="" /><span>Read more on Wikipedia</span></a></p>';
       elem.classList.remove('loading');
     }
