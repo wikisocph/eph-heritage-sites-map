@@ -981,11 +981,12 @@ function displayArticleExtract(title, elem) {
   loadJSONP(
     'https://en.wikipedia.org/w/api.php',
     {
-      action  : 'query',
-      format  : 'json',
-      prop    : 'extracts',
-      exintro : 1,
-      titles  : title,
+      action    : 'query',
+      format    : 'json',
+      prop      : 'extracts',
+      exintro   : 1,
+      redirects : true,
+      titles    : title,
     },
     function(data) {
       let pageId = Object.keys(data.query.pages)[0];
@@ -1074,6 +1075,7 @@ function processHashChange() {
     displayPanelContent('about');
   }
   else {
+    window.location.hash = '';  // Disable invalid fragments
     document.title = BASE_TITLE;
     displayPanelContent('index');
   }
