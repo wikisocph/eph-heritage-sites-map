@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Encyclopedia of Philippine Heritage: Heritage Sites Map</title>
+<title>Heritage Sites Map – Encyclopedia of Philippine Heritage</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:400,600,600i,700|Merriweather:300,300i" />
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.2.0/dist/leaflet.css" />
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.0.6/dist/MarkerCluster.css" />
@@ -561,6 +561,7 @@ nav li.selected a {
 'use strict';
 
 // Constants and fixed parameters
+const BASE_TITLE = 'Heritage Sites Map – Encyclopedia of Philippine Heritage';
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const ORGS = {
   NHCP   : 'National Historical Commission of the Philippines',
@@ -907,12 +908,13 @@ function displaySiteDetails(qid) {
 
   let record = Sites[qid];
 
-  if (!record.panelElem) generateSiteDetails(qid, record);
+  window.location.hash = '#' + qid;
+  document.title = record.title + ' – ' + BASE_TITLE;
 
+  if (!record.panelElem) generateSiteDetails(qid, record);
   displayPanelContent('details');
   let detailsElem = document.querySelector('#details');
   detailsElem.replaceChild(record.panelElem, detailsElem.childNodes[0]);
-  window.location.hash = '#' + qid;
 }
 
 
@@ -1002,6 +1004,7 @@ function displayArticleExtract(title, elem) {
 // the element with the 150-pixel wide image and any required attribution inside
 // a figcaption element.
 function displayFigure(filename, figure) {
+
   // Fetch the image thumbnail
   loadJSONP(
     'https://commons.wikimedia.org/w/api.php',
@@ -1067,9 +1070,11 @@ function processHashChange() {
     activateSite(fragment);
   }
   else if (fragment === 'about') {
+    document.title = 'About – ' + BASE_TITLE;
     displayPanelContent('about');
   }
   else {
+    document.title = BASE_TITLE;
     displayPanelContent('index');
   }
 }
