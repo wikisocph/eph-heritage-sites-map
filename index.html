@@ -162,15 +162,70 @@ nav li.selected a {
 }
 
 #index header {
-  padding: 20px 20px 10px;
+  padding: 15px 20px;
 }
 
-#index header p {
-  margin: 0;
-  color: #444;
-  font-size: 12px;
-  line-height: 12px;
-  font-weight: 400;
+#index header label {
+  display: block;
+  text-transform: uppercase;
+  padding-bottom: 8px;
+  font-size: 11px;
+  line-height: 11px;
+  font-weight: 700;
+  color: #eaa;
+}
+
+#filter {
+  position: relative;
+  width: 300px;
+  border-radius: 6px;
+  background-color: #f3e9e9;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='32'><polyline fill='rgb(238,170,170)' points='6,12 12,22 18,12'/><line stroke='rgb(238,170,170)' x1='0' y1='0' x2='0' y2='32' /></svg>");
+  background-position: right;
+  background-repeat: no-repeat;
+}
+
+#index header select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  box-sizing: content-box;
+  height: 32px;
+  width: 290px;
+  padding: 0 5px;
+  border: none;
+  font-size: 12.5px;
+  line-height: 32px;
+  background: none;
+  color: #611;
+}
+select::-moz-focus-inner {
+  outline: none !important;
+}
+
+
+optgroup {
+  padding: 6px 6px 3px;
+  font-size: 11px;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: #a44;
+  font-style: normal;
+}
+
+option {
+  font-size: 12.5px;
+  text-transform: initial;
+  padding: 3px;
+  color: #000;
+}
+
+select > option {
+  margin: 0 6px;
+}
+
+optgroup option {
+  padding-left: 10px;
 }
 
 #site-list {
@@ -411,16 +466,14 @@ nav li.selected a {
 }
 
 #details .designations li p {
-
+  margin: 0;
 }
+
 #details .designations li p::before {
   content: "■";
   display: inline-block;
   padding: 0 10px;
   color: #888;
-}
-#details p.address {
-  padding: 0 170px 0 0;
 }
 
 #about {
@@ -530,7 +583,12 @@ nav li.selected a {
   <div id="init"><div class="loader"></div></div>
   <section id="index" class="panel-content" data-display="flex">
     <header>
-      <p id="stats"></p>
+      <label for="filter">Filter</label>
+      <div id="filter">
+        <select>
+          <option value="all">All heritage sites – </option>
+        </select>
+      </div>
     </header>
     <ol id="site-list"></ol>
   </section>
@@ -572,17 +630,17 @@ const ORGS = {
   ASEAN  : 'ASEAN Center for Biodiversity',
 }
 const DESIGNATION_TYPES = {
-  Q23677505 : { org: 'NHCP'  , name: 'National Historical Landmark'  },
-  Q25927302 : { org: 'NHCP'  , name: 'National Shrine'               },
-  Q36348834 : { org: 'NHCP'  , name: 'National Monument'             },
-  Q36352489 : { org: 'NHCP'  , name: 'Heritage House'                },
-  Q24189292 : { org: 'NM'    , name: 'National Cultural Treasure'    },
-  Q25036854 : { org: 'NM'    , name: 'Important Cultural Property'   },
-  Q25927309 : { org: 'DENR'  , name: 'National Geological Monument'  },
-  Q9259     : { org: 'WHC'   , name: 'World Heritage Site'           },
-  Q17278671 : { org: 'WHC'   , name: 'Tentative World Heritage Site' },
-  Q20905436 : { org: 'RAMSAR', name: 'Ramsar Site'                   },
-  Q4654172  : { org: 'ASEAN' , name: 'ASEAN Heritage Park'           },
+  Q23677505 : { org: 'NHCP'  , name: 'National Historical Landmark' , order: 101 },
+  Q36348834 : { org: 'NHCP'  , name: 'National Monument'            , order: 102 },
+  Q25927302 : { org: 'NHCP'  , name: 'National Shrine'              , order: 103 },
+  Q36352489 : { org: 'NHCP'  , name: 'Heritage House'               , order: 104 },
+  Q24189292 : { org: 'NM'    , name: 'National Cultural Treasure'   , order: 201 },
+  Q25036854 : { org: 'NM'    , name: 'Important Cultural Property'  , order: 202 },
+  Q25927309 : { org: 'DENR'  , name: 'National Geological Monument' , order: 301 },
+  Q9259     : { org: 'WHC'   , name: 'World Heritage Site'          , order: 401 },
+  Q17278671 : { org: 'WHC'   , name: 'Tentative World Heritage Site', order: 402 },
+  Q20905436 : { org: 'RAMSAR', name: 'Ramsar Site'                  , order: 501 },
+  Q4654172  : { org: 'ASEAN' , name: 'ASEAN Heritage Park'          , order: 601 },
 }
 const NL = '\n';
 const SPARQL_QUERY =
@@ -646,9 +704,10 @@ const MIN_PH_LON             = 116.5;
 const MAX_PH_LON             = 126.5;
 
 // Globals
-var Sites = {};  // Hash to contain data about the heritage sites
-var Map;         // Leaflet map object
-var Cluster;     // Leaflet map cluster
+var Sites = {};        // Hash to contain data about the heritage sites
+var Map;               // Leaflet map object
+var Cluster;           // Leaflet map cluster
+var DbIndex;
 var AppIsInitialized;
 
 // ------------------------------------------------------------
@@ -740,10 +799,6 @@ function processWikidataQuery() {
   let initBounds = [[90, 180], [-90, -180]];
   Object.keys(Sites).forEach(function(qid) { postProcessRecord(qid, initBounds) });
 
-  // Update stats
-  let numSites = Object.keys(Sites).length;
-  document.getElementById('stats').innerHTML = 'Showing a total of ' + numSites + ' sites';
-
   // Re-initialize the map view to display the permalinked site or
   // to fit the Philippine sites
   let fragment = window.location.hash.replace('#', '');
@@ -755,7 +810,9 @@ function processWikidataQuery() {
     Map.fitBounds(new L.LatLngBounds(initBounds[0], initBounds[1]));
   }
 
-  sortIndex();
+  generateDbIndex();
+  generateFilter();
+  document.querySelector('#filter select').dispatchEvent(new Event('change'));
 
   // Remove the app initialization spinner and activate the hashchange handler
   AppIsInitialized = true;
@@ -878,22 +935,102 @@ function postProcessRecord(qid, initBounds) {
 }
 
 
+// TODO: Documentation
+function generateDbIndex() {
+
+  // Declare index with 1 entry
+  DbIndex = { all: new DbIndexEntry };
+
+  // Create index entries
+  Object.keys(DESIGNATION_TYPES).forEach(function(typeQid) {
+    DbIndex[typeQid] = new DbIndexEntry;
+    let orgId = DESIGNATION_TYPES[typeQid].org;
+    if (!(orgId in DbIndex)) DbIndex[orgId] = new DbIndexEntry;
+  });
+
+  // Populate index entries
+  Object.keys(Sites)
+    .map(function(siteQid) { return Sites[siteQid] })
+    .forEach(function(record) {
+      DbIndex.all.total++;
+      if (record.mapMarker) DbIndex.all.mapMarkers.push(record.mapMarker);
+      DbIndex.all.indexLis  .push(record.indexLi);
+      Object.keys(record.designations).forEach(function(typeQid) {
+        let orgId = DESIGNATION_TYPES[typeQid].org;
+        DbIndex[typeQid].total++;
+        DbIndex[orgId].total++;
+        if (record.mapMarker) {
+          DbIndex[typeQid].mapMarkers.push(record.mapMarker);
+          DbIndex[orgId].mapMarkers.push(record.mapMarker);
+        }
+        DbIndex[typeQid].indexLis  .push(record.indexLi);
+        DbIndex[orgId].indexLis  .push(record.indexLi);
+      });
+    }
+  );
+
+  // Sort list items for panel index
+  Object.keys(DbIndex).forEach(function(key) {
+    DbIndex[key].indexLis = DbIndex[key].indexLis
+      .map(function(li) { return { sortKey: li.textContent, item: li } })
+      .sort(function(a, b) { return a.sortKey > b.sortKey ? 1 : -1 })
+      .map(function(dict) { return dict.item });
+  });
+}
+
+
+// TODO: Documentation
+function generateFilter() {
+
+  let select = document.querySelector('#filter select');
+
+  // Populate the select element
+  select.options[0].textContent += DbIndex.all.total;
+  let optgroup;
+  Object.keys(DESIGNATION_TYPES)
+    .map(function(qid) { return { sortKey: DESIGNATION_TYPES[qid].order, item: qid } })
+    .sort(function(a, b) { return a.sortKey - b.sortKey })
+    .map(function(dict) { return dict.item })
+    .forEach(function(qid) {
+      if (DESIGNATION_TYPES[qid].order % 100 === 1) {
+        optgroup = document.createElement('optgroup');
+        optgroup.label = ORGS[DESIGNATION_TYPES[qid].org];
+        select.appendChild(optgroup);
+      }
+      let option = document.createElement('option');
+      option.value = qid;
+      option.textContent = DESIGNATION_TYPES[qid].name + ' – ' + DbIndex[qid].total;
+      optgroup.appendChild(option);
+    }
+  );
+
+  // Add event handler to activate the filtering
+  select.addEventListener('change', function(el) {
+    let qid = select.options[select.selectedIndex].value;
+    Cluster.clearLayers();
+    Cluster.addLayers(DbIndex[qid].mapMarkers);
+    if (AppIsInitialized) Map.fitBounds(Cluster.getBounds());
+    let ol = document.getElementById('site-list');
+    ol.innerHTML = '';
+    DbIndex[qid].indexLis.forEach(function(li) { ol.appendChild(li) });
+    select.blur();
+  });
+}
+
+
 // This takes a heritage site QID and updates the map to show the
 // corresponding map marker, opens its popup if it isn't open yet, and
 // displays the site's details on the side panel.
 function activateSite(qid) {
+  displaySiteDetails(qid);
   let record = Sites[qid];
   if (record.isCompound) {
     // TODO: enhance in the future to show all sites
-    displaySiteDetails(qid);
   }
   else {
     Cluster.zoomToShowLayer(record.mapMarker, function() {
       Map.setView([record.lat, record.lon], Map.getZoom());
-      if (record.popup.isOpen()) {
-        displaySiteDetails(qid);
-      }
-      else {
+      if (!record.popup.isOpen()) {
         record.mapMarker.openPopup();
       }
     });
@@ -938,20 +1075,25 @@ function generateSiteDetails(qid, record) {
   }
 
   let designationsHtml = '<h2>Designations</h2><ul class="designations">';
-  Object.keys(record.designations).forEach(function(designationQid) {
-    let type = DESIGNATION_TYPES[designationQid];
-    let designation = record.designations[designationQid];
-    let declaredHtml = designation.date ? '<p>Declared – ' + designation.date + '</p>' : '';
-    designationsHtml +=
-      '<li>' +
-        '<h3>' + type.name + '</h3>' +
-        '<div class="org">' +
-          '<img src="img/org_logo_' + type.org.toLowerCase() + '.svg">' +
-          ORGS[type.org] +
-        '</div>' +
-        declaredHtml +
-      '</li>';
-  });
+  Object.keys(record.designations)
+    .map(function(qid) { return { sortKey: DESIGNATION_TYPES[qid].order, item: qid } })
+    .sort(function(a, b) { return a.sortKey - b.sortKey })
+    .map(function(dict) { return dict.item })
+    .forEach(function(designationQid) {
+      let type = DESIGNATION_TYPES[designationQid];
+      let designation = record.designations[designationQid];
+      let declaredHtml = designation.date ? '<p>Declared – ' + designation.date + '</p>' : '';
+      designationsHtml +=
+        '<li>' +
+          '<h3>' + type.name + '</h3>' +
+          '<div class="org">' +
+            '<img src="img/org_logo_' + type.org.toLowerCase() + '.svg">' +
+            ORGS[type.org] +
+          '</div>' +
+          declaredHtml +
+        '</li>';
+    }
+  );
   designationsHtml += '</ul>';
 
   let detailsHtml =
@@ -1097,23 +1239,6 @@ function displayPanelContent(contentId) {
 }
 
 
-// This sorts the index list.
-function sortIndex() {
-  let lis = Object.keys(Sites)
-    .map(function(el) {
-      return {
-        key  : Sites[el].title.replace(/^[^A-Za-z0-9]/, ''),
-        item : Sites[el].indexLi,
-      };
-    })
-    .sort(function(a, b) { return a.key > b.key ? 1 : -1 })
-    .map(function(el) { return el.item });
-  let list = document.getElementById('site-list');
-  list.innerHTML = '';
-  lis.forEach(function(li) { list.appendChild(li); });
-}
-
-
 // This takes a WDQS query result Wikidata item data and returns the
 // item's QID.
 function getQid(queryItem) {
@@ -1190,6 +1315,13 @@ function Designation() {
   this.partOfQid     = null;
   // TODO: add links to external info about the designation such as
   // the WHS page or the resolution that created the designation
+}
+
+// TODO:
+function DbIndexEntry() {
+  this.total      = 0;
+  this.mapMarkers = [];
+  this.indexLis   = [];
 }
 
 // Class declaration for representing an individual heritage site
