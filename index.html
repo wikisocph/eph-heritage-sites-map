@@ -796,18 +796,13 @@ function processWikidataQuery() {
   });
 
   // Do post-processing
-  let initBounds = [[90, 180], [-90, -180]];
-  Object.keys(Sites).forEach(function(qid) { postProcessRecord(qid, initBounds) });
+  Object.keys(Sites).forEach(function(qid) { postProcessRecord(qid) });
 
-  // Re-initialize the map view to display the permalinked site or
-  // to fit the Philippine sites
+  // If there is a permalinked site, re-initialize the map view
   let fragment = window.location.hash.replace('#', '');
   if (fragment in Sites) {
     let record = Sites[fragment];
     Map.setView([record.lat, record.lon], TILE_LAYER_MAX_ZOOM);
-  }
-  else {
-    Map.fitBounds(new L.LatLngBounds(initBounds[0], initBounds[1]));
   }
 
   generateDbIndex();
@@ -893,10 +888,9 @@ function processQueryResult(result, record) {
 }
 
 
-// This takes a heritage site QID and the initial bounding box and
-// cleans up the corresponding record, generates a map marker and index entry
-// for the heritage site, and updates the bounding box as needed.
-function postProcessRecord(qid, initBounds) {
+// This takes a heritage site QID then cleans up the corresponding record,
+// and generates a map marker and index entry for the heritage site.
+function postProcessRecord(qid) {
 
   let record = Sites[qid];
 
@@ -919,19 +913,6 @@ function postProcessRecord(qid, initBounds) {
   let li = document.createElement('li');
   li.innerHTML = '<a href="#' + qid + '">' + record.title + '</a>';
   record.indexLi = li;
-
-  // Update the bounding box containing all the heritage sites in the
-  // Philippines
-  if (
-    !record.isCompound &&
-    MIN_PH_LAT <= record.lat && record.lat <= MAX_PH_LAT &&
-    MIN_PH_LON <= record.lon && record.lon <= MAX_PH_LON
-  ) {
-    initBounds[0][0] = Math.min(record.lat, initBounds[0][0]);
-    initBounds[0][1] = Math.min(record.lon, initBounds[0][1]);
-    initBounds[1][0] = Math.max(record.lat, initBounds[1][0]);
-    initBounds[1][1] = Math.max(record.lon, initBounds[1][1]);
-  }
 }
 
 
