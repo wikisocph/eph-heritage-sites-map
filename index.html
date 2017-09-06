@@ -305,7 +305,7 @@ optgroup option {
 }
 
 #details p {
-  margin: 0 0 10px 0;
+  margin: 0;
   padding: 0;
 }
 
@@ -410,10 +410,14 @@ optgroup option {
   color: #888;
 }
 
+#details .wikipedia-link {
+  margin-top: 10px;
+}
+
 #details .wikipedia-link a {
-  line-height: 20px;
   display: inline-block;
   border: none;
+  line-height: 20px;
   text-decoration: none;
   color: #a22;
 }
@@ -421,18 +425,19 @@ optgroup option {
   background: #eee;
 }
 
-#details .wikipedia-link img {
+#details .wikipedia-link a img {
   display: inline-block;
   padding-right: 3px;
-  vertical-align: middle;
+  vertical-align: bottom;
   background: #fff;
 }
 
-#details .wikipedia-link span {
+#details .wikipedia-link a span {
   display: inline-block;
   padding: 0 5px;
+  height: 22px;
+  line-height: 22px;
 }
-
 
 #details .designations {
   margin: 15px 0 0 0;
@@ -465,15 +470,51 @@ optgroup option {
   height: 50px;
 }
 
-#details .designations li p {
-  margin: 0;
+#details .designations li > p {
+  padding-left: 20px;
+  text-indent: -20px;
 }
 
-#details .designations li p::before {
-  content: "■";
+#details .designations li > p::before {
   display: inline-block;
-  padding: 0 10px;
+  content: "■";
+  width: 20px;
+  text-indent: 0;
   color: #888;
+}
+
+#details .designations li .wikilinks {
+  padding-left: 20px;
+  text-indent: 0;
+}
+
+#details .designations li .wikilinks p {
+  margin-top: 5px;
+}
+
+#details .designations li .wikilinks p a {
+  display: inline-block;
+  border: none;
+  text-indent: initial;
+  text-decoration: none;
+  color: #a22;
+}
+#details .designations li .wikilinks p a:hover {
+  background: #eee;
+}
+
+#details .designations li .wikilinks p a img {
+  display: inline-block;
+  padding-right: 3px;
+  vertical-align: bottom;
+  background: #fff;
+}
+
+#details .designations li .wikilinks p a span {
+  display: inline-block;
+  padding: 0 5px;
+  height: 22px;
+  line-height: 22px;
 }
 
 #about {
@@ -645,6 +686,7 @@ const DESIGNATION_TYPES = {
 const NL = '\n';
 const SPARQL_QUERY =
 'SELECT ?site ?siteLabel ?coord ?designation ?declared ?declaredPrecision' + NL +
+'       ?declaration ?declarationTitle ?declarationScan ?declarationText' + NL +
 '       ?partSite ?partSiteLabel ?image ?siteArticle WHERE {' + NL +
 '  ?site p:P625 ?coordStatement .' + NL +
 '  ?coordStatement ps:P625 ?coord .' + NL +
@@ -684,6 +726,15 @@ const SPARQL_QUERY =
 '    ?designationStatement pqv:P580 ?declaredValue .' + NL +
 '    ?declaredValue wikibase:timeValue ?declared ;' + NL +
 '                   wikibase:timePrecision ?declaredPrecision .' + NL +
+'  }' + NL +
+'  OPTIONAL {' + NL +
+'    ?designationStatement pq:P457 ?declaration .' + NL +
+'    ?declaration wdt:P1476 ?declarationTitle .' + NL +
+'    OPTIONAL { ?declaration wdt:P996 ?declarationScan }' + NL +
+'    OPTIONAL {' + NL +
+'      ?declarationText schema:about ?declaration ;' + NL +
+'                       schema:isPartOf <https://en.wikisource.org/> .' + NL +
+'    }' + NL +
 '  }' + NL +
 '  OPTIONAL {' + NL +
 '    ?siteArticle schema:about ?site ;' + NL +
@@ -877,6 +928,12 @@ function processQueryResult(result, record) {
   if (!designation.date && 'declared' in result) {
     parseDate(result, 'declared', designation);
   }
+  if (!designation.declarationData && 'declaration' in result) {
+    designation.declarationData = result.declaration.value;
+    designation.declarationTitle = result.declarationTitle.value;
+    if ('declarationScan' in result) designation.declarationScan = result.declarationScan.value.replace(/Special:FilePath\//, 'File:');
+    if ('declarationText' in result) designation.declarationText = result.declarationText.value;
+  }
 
   if ('image' in result) {
     record.imageFilename = extractImageFilename(result.image);
@@ -1063,16 +1120,33 @@ function generateSiteDetails(qid, record) {
     .forEach(function(designationQid) {
       let type = DESIGNATION_TYPES[designationQid];
       let designation = record.designations[designationQid];
-      let declaredHtml = designation.date ? '<p>Declared – ' + designation.date + '</p>' : '';
-      designationsHtml +=
-        '<li>' +
-          '<h3>' + type.name + '</h3>' +
-          '<div class="org">' +
-            '<img src="img/org_logo_' + type.org.toLowerCase() + '.svg">' +
-            ORGS[type.org] +
-          '</div>' +
-          declaredHtml +
-        '</li>';
+      let declarationHtml = '';
+      if (designation.declarationData) {
+        declarationHtml = '<p>Declaration – <i>' + designation.declarationTitle + '</i>';
+        declarationHtml += designation.date ? '; approved ' + designation.date : '';
+        declarationHtml += '</p>';
+        declarationHtml += '<div class="wikilinks">';
+        declarationHtml += '<p><a href="' + designation.declarationData + '" title="">';
+        declarationHtml += '<img src="img/wikidata_tiny_logo.png" alt="" />';
+        declarationHtml += '<span>View details in Wikidata</span></a></p>';
+        if (designation.declarationText) {
+          declarationHtml += '<p><a href="' + designation.declarationText + '" title="">';
+          declarationHtml += '<img src="img/wikisource_tiny_logo.png" alt="" />';
+          declarationHtml += '<span>Read declaration text on Wikisource</span></a></p>';
+        }
+        if (designation.declarationScan) {
+          declarationHtml += '<p><a href="' + designation.declarationScan + '" title="">';
+          declarationHtml += '<img src="img/wikicommons_tiny_logo.png" alt="" />';
+          declarationHtml += '<span>View scanned declaration in Wikimedia Commons</span></a></p>';
+        }
+        declarationHtml += '</div>';
+      }
+      else {
+        if (designation.date) declarationHtml = '<p>Declared – ' + designation.date + '</p>';
+      }
+      designationsHtml += '<li><h3>' + type.name + '</h3><div class="org">';
+      designationsHtml += '<img src="img/org_logo_' + type.org.toLowerCase() + '.svg">';
+      designationsHtml += ORGS[type.org] + '</div>' + declarationHtml + '</li>';
     }
   );
   designationsHtml += '</ul>';
@@ -1291,9 +1365,12 @@ var loadJSONP = (function(){
 
 // Class declaration for representing a site's heritage designation
 function Designation() {
-  this.date          = undefined;
-  this.datePrecision = undefined;
-  this.partOfQid     = null;
+  this.date             = undefined;
+  this.declarationData  = undefined;
+  this.declarationTitle = undefined;
+  this.declarationScan  = undefined;
+  this.declarationText  = undefined;
+  this.partOfQid        = null;
   // TODO: add links to external info about the designation such as
   // the WHS page or the resolution that created the designation
 }
