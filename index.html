@@ -7,9 +7,6 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.2.0/dist/leaflet.css" />
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.0.6/dist/MarkerCluster.css" />
 <link rel="stylesheet" href="css/leaflet.extra-markers.min.css" />
-<script src="https://unpkg.com/leaflet@1.2.0/dist/leaflet.js"></script>
-<script src="https://unpkg.com/leaflet.markercluster@1.0.6/dist/leaflet.markercluster.js"></script>
-<script src="js/leaflet.extra-markers.min.js"></script>
 <style>
 
 html, body {
@@ -656,6 +653,10 @@ optgroup option {
 </section>
 <section id="map">
 </section>
+<script src="https://unpkg.com/leaflet@1.2.0/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.0.6/dist/leaflet.markercluster.js"></script>
+<script src="js/leaflet.extra-markers.min.js"></script>
+<script src="js/osmtogeojson.js"></script>
 <script>
 'use strict';
 
@@ -674,7 +675,8 @@ const DESIGNATION_TYPES = {
   Q23677505 : { org: 'NHCP'  , name: 'National Historical Landmark' , order: 101 },
   Q36348834 : { org: 'NHCP'  , name: 'National Monument'            , order: 102 },
   Q25927302 : { org: 'NHCP'  , name: 'National Shrine'              , order: 103 },
-  Q36352489 : { org: 'NHCP'  , name: 'Heritage House'               , order: 104 },
+  Q40720162 : { org: 'NHCP'  , name: 'Heritage Zone'                , order: 104 },
+  Q36352489 : { org: 'NHCP'  , name: 'Heritage House'               , order: 105 },
   Q24189292 : { org: 'NM'    , name: 'National Cultural Treasure'   , order: 201 },
   Q25036854 : { org: 'NM'    , name: 'Important Cultural Property'  , order: 202 },
   Q25927309 : { org: 'DENR'  , name: 'National Geological Monument' , order: 301 },
@@ -704,6 +706,7 @@ const SPARQL_QUERY =
 '      ?designation = wd:Q23677505 ||  # National Historical Landmark' + NL +
 '      ?designation = wd:Q25927302 ||  # National Shrine' + NL +
 '      ?designation = wd:Q36348834 ||  # National Monument' + NL +
+'      ?designation = wd:Q40720162 ||  # Heritage Zone' + NL +
 '      ?designation = wd:Q36352489 ||  # Heritage House' + NL +
 '      ?designation = wd:Q24189292 ||  # National Cultural Treasure' + NL +
 '      ?designation = wd:Q25036854 ||  # Important Cultural Property' + NL +
@@ -1078,6 +1081,7 @@ function activateSite(qid) {
 
 // This function displays the heritage site's details on the side panel.
 function displaySiteDetails(qid) {
+  // TODO: Fix double-calling of this function
 
   let record = Sites[qid];
 
@@ -1088,6 +1092,8 @@ function displaySiteDetails(qid) {
   displayPanelContent('details');
   let detailsElem = document.querySelector('#details');
   detailsElem.replaceChild(record.panelElem, detailsElem.childNodes[0]);
+
+  queryOsm(qid);
 }
 
 
@@ -1256,6 +1262,40 @@ function displayFigure(filename, figure) {
 }
 
 
+// TODO
+function queryOsm(qid) {
+  if (Sites[qid].shapeLayer !== undefined) {
+    if (Sites[qid].shapeLayer) {
+      Map.fitBounds(Sites[qid].shapeLayer.getBounds());
+    }
+  }
+  else {
+    Sites[qid].shapeLayer = null;
+    loadJSONP(
+      'https://overpass-api.de/api/interpreter',
+      {
+        data: '[out:json][timeout:25];(way["wikidata"="' + qid + '"];relation["wikidata"="' + qid + '"];);out body;>;out skel qt;',
+      },
+      function(data) {
+        let geoJson = osmtogeojson(data);
+        if (!geoJson || geoJson.features.length === 0) return;
+        let shapeLayer = L.geoJSON(geoJson, {
+          style: {
+            color     : '#ff3333',
+            opacity   : 0.7,
+            fill      : true,
+          }
+        });
+        Sites[qid].shapeLayer = shapeLayer;
+        shapeLayer.addTo(Map);
+        Map.fitBounds(shapeLayer.getBounds());
+      },
+      'jsonp'
+    )
+  }
+}
+
+
 // This event handler handles any change in the window URL hash
 function processHashChange() {
 
@@ -1329,7 +1369,7 @@ function parseDate(result, keyName, dict) {
 // Adapted from https://gist.github.com/gf3/132080/110d1b68d7328d7bfe7e36617f7df85679a08968
 var loadJSONP = (function(){
   var unique = 0;
-  return function(endpoint, params, callback) {
+  return function(endpoint, params, callback, callbackParamName) {
 
     // Create unique function name
     let name = '_jsonp_' + unique++;
@@ -1339,7 +1379,8 @@ var loadJSONP = (function(){
       return escape(el) + '=' + escape(params[el]);
     }).join('&');
     queryParams += queryParams ? '&' : '';
-    queryParams += '&callback=' + name;
+    if (!callbackParamName) callbackParamName = 'callback';
+    queryParams += '&' + callbackParamName + '=' + name;
 
     // Create script element
     let script = document.createElement('script');
@@ -1396,6 +1437,7 @@ function SiteRecord() {
   this.location      = '';
   this.mapMarker     = undefined;
   this.popup         = undefined;
+  this.shapeLayer    = undefined;
 }
 
 // Class declaration for representing an compound heritage site
