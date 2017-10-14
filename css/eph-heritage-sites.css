@@ -1,0 +1,236 @@
+.loader {
+  border-color: rgba(136, 34, 34, 0.2);
+  border-left-color: #822;
+}
+
+#panel {
+  background: #822;
+}
+
+#branding p {
+  color: #a65959;
+}
+
+nav li a {
+  background: #a65959;
+  color: #600;
+}
+nav li a:hover {
+  background: #c49090;
+}
+
+#index header {
+  padding: 15px 20px;
+}
+
+#index header label {
+  display: block;
+  text-transform: uppercase;
+  padding-bottom: 8px;
+  font-size: 11px;
+  line-height: 11px;
+  font-weight: 700;
+  color: #eaa;
+}
+
+#filter {
+  position: relative;
+  width: 300px;
+  border-radius: 6px;
+  background-color: #f3e9e9;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='32'><polyline fill='rgb(238,170,170)' points='6,12 12,22 18,12'/><line stroke='rgb(238,170,170)' x1='0' y1='0' x2='0' y2='32' /></svg>");
+  background-position: right;
+  background-repeat: no-repeat;
+}
+
+#index header select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  box-sizing: content-box;
+  height: 32px;
+  width: 290px;
+  padding: 0 5px;
+  border: none;
+  font-size: 12.5px;
+  line-height: 32px;
+  background: none;
+  color: #611;
+}
+select::-moz-focus-inner {
+  outline: none !important;
+}
+
+optgroup {
+  padding: 6px 6px 3px;
+  font-size: 11px;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: #a44;
+  font-style: normal;
+}
+
+option {
+  font-size: 12.5px;
+  text-transform: initial;
+  padding: 3px;
+  color: #000;
+}
+
+select > option {
+  margin: 0 6px;
+}
+
+optgroup option {
+  padding-left: 10px;
+}
+
+#index-list {
+  background: #f3e9e9;
+}
+
+#index-list li:hover {
+  background: #eaa;
+  box-shadow: 0 -1px #eaa;
+}
+
+#index-list li a {
+  border-bottom-color: #eaa;
+}
+
+#details h1 {
+  border-bottom-color: #eaa;
+  color: #611;
+}
+
+#details p {
+  margin: 0;
+  padding: 0;
+}
+
+#details figure > a {
+  border-color: #ade;
+}
+
+#details h2 {
+  color: #d88;
+  border-top-color: #eaa;
+}
+
+#details .wikipedia-link {
+  margin-top: 10px;
+}
+
+#details .wikipedia-link a {
+  display: inline-block;
+  border: none;
+  line-height: 20px;
+  text-decoration: none;
+  color: #a22;
+}
+#details .wikipedia-link a:hover {
+  background: #eee;
+}
+
+#details .wikipedia-link a img {
+  display: inline-block;
+  padding-right: 3px;
+  vertical-align: bottom;
+  background: #fff;
+}
+
+#details .wikipedia-link a span {
+  display: inline-block;
+  padding: 0 5px;
+  height: 22px;
+  line-height: 22px;
+}
+
+#details .designations {
+  margin: 15px 0 0 0;
+  padding: 0;
+}
+
+#details .designations li {
+  position: relative;
+  list-style: none;
+  padding: 0 0 15px 65px;
+  min-height: 50px;
+}
+
+#details .designations li h3 {
+  margin: 0;
+  padding: 0;
+  font-size: 1.15em;
+  font-weight: bold;
+}
+
+#details .designations li .org {
+  font-style: italic;
+  color: #666;
+}
+
+#details .designations li .org img {
+  position: absolute;
+  top: 0; left: 0;
+  width: 50px;
+  height: 50px;
+}
+
+#details .designations li > p {
+  padding-left: 20px;
+  text-indent: -20px;
+}
+
+#details .designations li > p::before {
+  display: inline-block;
+  content: "■";
+  width: 20px;
+  text-indent: 0;
+  color: #888;
+}
+
+#details .designations li .wikilinks {
+  padding-left: 20px;
+  text-indent: 0;
+}
+
+#details .designations li .wikilinks p {
+  margin-top: 5px;
+}
+
+#details .designations li .wikilinks p a {
+  display: inline-block;
+  border: none;
+  text-indent: initial;
+  text-decoration: none;
+  color: #a22;
+}
+#details .designations li .wikilinks p a:hover {
+  background: #eee;
+}
+
+#details .designations li .wikilinks p a img {
+  display: inline-block;
+  padding-right: 3px;
+  vertical-align: bottom;
+  background: #fff;
+}
+
+#details .designations li .wikilinks p a span {
+  display: inline-block;
+  padding: 0 5px;
+  height: 22px;
+  line-height: 22px;
+}
+
+.marker-cluster-small      { background-color: rgba(204, 68, 68, 0.5); }
+.marker-cluster-small  div { background-color: rgba(204, 68, 68, 0.8); }
+.marker-cluster-medium     { background-color: rgba(170, 51, 51, 0.5); }
+.marker-cluster-medium div { background-color: rgba(170, 51, 51, 0.8); }
+.marker-cluster-large      { background-color: rgba(136, 34, 34, 0.5); }
+.marker-cluster-large  div { background-color: rgba(136, 34, 34, 0.8); }
+
+.leaflet-popup-content-wrapper, .leaflet-popup-tip {
+  background: #822;
+}
