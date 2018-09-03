@@ -84,6 +84,8 @@ const SPARQL_QUERY =
 '  }' + NL +
 '  SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }' + NL +
 '}';
+const SPARQL_QUERY_ESCAPED = escape(SPARQL_QUERY);
+const WDQS_GUI_URL = 'https://query.wikidata.org/#' + SPARQL_QUERY_ESCAPED;
 
 // Globals
 var Sites = {};        // Hash to contain data about the heritage sites

@@ -1,6 +1,16 @@
 'use strict';
 
 
+function loadPrimaryData() {
+  let xhrObject = new XMLHttpRequest();
+  xhrObject.onreadystatechange = processWikidataQuery;
+  xhrObject.open('POST', WDQS_API_URL, true);
+  xhrObject.overrideMimeType('text/plain');
+  xhrObject.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+  xhrObject.send('format=json&query=' + SPARQL_QUERY_ESCAPED);
+}
+
+
 // This is the AJAX event handler for the Wikidata query and
 // also completes the app initialization.
 function processWikidataQuery() {
@@ -37,6 +47,10 @@ function processWikidataQuery() {
   generateDbIndex();
   generateFilter();
   document.querySelector('#filter select').dispatchEvent(new Event('change'));
+
+  // Add Wikidata Query Service GUI URL
+  let anchorElem = document.getElementById('wdqs-link');
+  anchorElem.href = WDQS_GUI_URL;
 
   enableApp();
 }
@@ -83,7 +97,7 @@ function processQueryResult(result, record) {
     }
     partDesignation.partOfQid = getQid(result.site);
     if ('declared' in result) {
-      parseDate(result, 'declared', partDesignation);
+      partDesignation.date = parseDate(result, 'declared');
     }
   }
   else {
@@ -101,7 +115,7 @@ function processQueryResult(result, record) {
   }
 
   if (!designation.date && 'declared' in result) {
-    parseDate(result, 'declared', designation);
+    designation.date = parseDate(result, 'declared');
   }
   if (!designation.declarationData && 'declaration' in result) {
     designation.declarationData = result.declaration.value;
