@@ -2,15 +2,15 @@
 
 // Constants and fixed parameters
 const WDQS_API_URL            = 'https://query.wikidata.org/sparql';
+const COMMONS_WIKI_URL_PREF   = 'https://commons.wikimedia.org/wiki/';
 const COMMONS_API_URL         = 'https://commons.wikimedia.org/w/api.php';
 const YEAR_PRECISION          = '9';
 const PH_QID                  = 'Q928';
-const COUNTRY_QID             = 'Q6256';
 const REGION_QID              = 'Q24698';
 const PROVINCE_QID            = 'Q24746';
 const HUC_QID                 = 'Q29946056';
 const CITY_QID                = 'Q104157';
-const ADMIN_QIDS              = [COUNTRY_QID, REGION_QID, PROVINCE_QID, HUC_QID, CITY_QID];
+const ADMIN_QIDS              = [REGION_QID, PROVINCE_QID, HUC_QID, CITY_QID];
 const ADMIN_LEVELS            = 4;
 const OSM_LAYER_URL           = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 const OSM_LAYER_ATTRIBUTION   = 'Base map &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>';
@@ -32,7 +32,7 @@ var AppIsInitialized;
 window.addEventListener('load', init);
 
 
-// This initializes the app once the page has been loaded.
+// Initializes the app once the page has been loaded.
 function init() {
   initMap();
   loadPrimaryData();
@@ -41,7 +41,7 @@ function init() {
 }
 
 
-// This initializes the Leaflet-based map.
+// Initializes the Leaflet-based map.
 function initMap() {
 
   // Create map and set initial view
@@ -86,8 +86,7 @@ function initMap() {
 }
 
 
-// This enables the app and should be called after the Wikidata query has been
-// processed.
+// Enables the app. Should be called after the Wikidata queries have been processed.
 function enableApp() {
   // Remove the app initialization spinner and activate the hashchange handler
   AppIsInitialized = true;
@@ -96,7 +95,7 @@ function enableApp() {
 }
 
 
-// This event handler handles any change in the window URL hash.
+// Event handler that handles any change in the window URL hash.
 function processHashChange() {
 
   if (!AppIsInitialized) return;
@@ -116,13 +115,13 @@ function processHashChange() {
 }
 
 
-// This displays the element with the specified ID on the side panel and
+// Displays the element with the specified ID on the side panel and
 // updates the navigation menu state as well.
 function displayPanelContent(contentId) {
-  document.querySelectorAll('.panel-content').forEach(function(content) {
+  document.querySelectorAll('.panel-content').forEach(content => {
     content.style.display = (content.id === contentId) ? content.dataset.display : 'none';
   });
-  document.querySelectorAll('nav li').forEach(function(li) {
+  document.querySelectorAll('nav li').forEach(li => {
     if (li.childNodes[0].getAttribute('href') === '#' + contentId) {
       li.classList.add('selected');
     }
@@ -133,84 +132,76 @@ function displayPanelContent(contentId) {
 }
 
 
-// This takes a Commons image filename and a figure HTML element and populates
-// the element with the 150-pixel wide image and any required attribution inside
-// a figcaption element.
-function displayFigure(filename, figure) {
+// Given a Commons image filename and an array of class names, generates
+// a figure HTML string, returns it, and calls the Commons API to fetch
+// and insert the image attribution if needed. If the filename is false,
+// the figure element will indicate "No photo available".
+function generateFigure(filename, classNames = []) {
+  if (filename) {
 
-  // Fetch the image thumbnail
-  loadJsonp(
-    COMMONS_API_URL,
-    {
-      action     : 'query',
-      format     : 'json',
-      prop       : 'imageinfo',
-      iiprop     : 'url',
-      iiurlwidth : 300,
-      titles     : 'File:' + filename,
-    },
-    function(data) {
-      let pageId = Object.keys(data.query.pages)[0];
-      let imageInfo = data.query.pages[pageId].imageinfo[0];
-      let img = document.createElement('img');
-      img.src = imageInfo.thumburl;
-      let anchor = document.createElement('a');
-      anchor.href = imageInfo.descriptionurl;
-      img.style.height = (imageInfo.thumbheight / 2) + 'px';
-      anchor.appendChild(img);
-      figure.replaceChild(anchor, figure.childNodes[0]);  // replace spinner
-    }
-  );
-
-  // Fetch the image attribution and see if it is needed
-  loadJsonp(
-    COMMONS_API_URL,
-    {
-      action : 'query',
-      format : 'json',
-      prop   : 'imageinfo',
-      iiprop : 'extmetadata',
-      titles : 'File:' + filename,
-    },
-    function(data) {
-      let pageId = Object.keys(data.query.pages)[0];
-      let metadata = data.query.pages[pageId].imageinfo[0].extmetadata;
-      let artistHtml = metadata.Artist.value;
-      if (artistHtml.search('href="//') >= 0) {
-        artistHtml = artistHtml.replace(/href="(?:https?:)?\/\//, 'href="https://');
-      }
-      let licenseHtml = '';
-      if ('AttributionRequired' in metadata && metadata.AttributionRequired.value === 'true') {
-        licenseHtml = metadata.LicenseShortName.value.replace(/ /g, '&nbsp;');
-        licenseHtml = licenseHtml.replace(/-/g, '&#8209;');
-        licenseHtml = '[' + licenseHtml + ']';
-        if ('LicenseUrl' in metadata) {
-          licenseHtml = '<a href="' + metadata.LicenseUrl.value + '">' + licenseHtml + '</a>';
+    // Fetch the image attribution asynchronously then add it to the figure element
+    loadJsonp(
+      COMMONS_API_URL,
+      {
+        action : 'query',
+        format : 'json',
+        prop   : 'imageinfo',
+        iiprop : 'extmetadata',
+        titles : 'File:' + filename,
+      },
+      function(data) {
+        let pageId = Object.keys(data.query.pages)[0];
+        let metadata = data.query.pages[pageId].imageinfo[0].extmetadata;
+        let artistHtml = metadata.Artist.value;
+        if (artistHtml.search('href="//') >= 0) {
+          artistHtml = artistHtml.replace(/href="(?:https?:)?\/\//, 'href="https://');
         }
-        licenseHtml = ' ' + licenseHtml;
+        let licenseHtml = '';
+        if ('AttributionRequired' in metadata && metadata.AttributionRequired.value === 'true') {
+          licenseHtml = metadata.LicenseShortName.value.replace(/ /g, '&nbsp;');
+          licenseHtml = licenseHtml.replace(/-/g, '&#8209;');
+          licenseHtml = `[${licenseHtml}]`;
+          if ('LicenseUrl' in metadata) {
+            licenseHtml = `<a href="${metadata.LicenseUrl.value}">${licenseHtml}</a>`;
+          }
+          licenseHtml = ' ' + licenseHtml;
+        }
+        let selector = `figure${classNames.length ? '.' : ''}${classNames.join('.')} figcaption`;
+        document.querySelector(selector).innerHTML = artistHtml + licenseHtml;
       }
-      figure.insertAdjacentHTML('beforeend', '<figcaption>' + artistHtml + licenseHtml + '</figcaption>');
-    }
-  );
+    );
+
+    return (
+      `<figure class="${classNames.join(' ')}">` +
+        `<a href="${COMMONS_WIKI_URL_PREF}File:${filename}">` +
+          `<img class="loading" src="${COMMONS_WIKI_URL_PREF}Special:FilePath/${filename}?width=300" alt="" onload="this.className=''">` +
+        '</a>' +
+        '<figcaption>(Loading…)</figcaption>' +
+      '</figure>'
+    );
+  }
+  else {
+    return `<figure class="${classNames.join(' ')} nodata">No photo available</figure>`;
+  }
 }
 
 
-// This takes a WDQS query result Wikidata item data and returns the QID.
+// Given a WDQS query result Wikidata item data, returns the QID.
 function getQid(queryItem) {
   if (!queryItem) return '';
   return queryItem.value.split('/')[4];
 }
 
 
-// This takes a WDQS query result image data and returns the image filename.
+// Given a WDQS query result image data, returns the base image filename.
 function extractImageFilename(image) {
   let regex = /https?:\/\/commons\.wikimedia\.org\/wiki\/Special:FilePath\//;
-  return unescape(image.value.replace(regex, ''));
+  return decodeURIComponent(image.value.replace(regex, ''));
 }
 
 
-// This takes a WDQS result record, takes the date value based on the specified
-// key name and then returns a formatted date string.
+// Given a WDQS result record and key name, takes the date value based on
+// the key name and then returns a formatted date string.
 function parseDate(result, keyName) {
   let dateVal = result[keyName].value;
   if (result[keyName + 'Precision'].value === YEAR_PRECISION) {

@@ -11,7 +11,7 @@ function loadPrimaryData() {
 }
 
 
-// This is the AJAX event handler for the Wikidata query and
+// Event handler that handles the AJAX for the Wikidata query and
 // also completes the app initialization.
 function processWikidataQuery() {
 
@@ -20,7 +20,7 @@ function processWikidataQuery() {
   var data = JSON.parse(this.responseText);
 
   // Go through each query result and populate the Sites database
-  data.results.bindings.forEach(function(result) {
+  data.results.bindings.forEach(result => {
     let qid = getQid(result.site);
     if (!(qid in Sites)) {
       if ('partSite' in result) {
@@ -35,7 +35,7 @@ function processWikidataQuery() {
   });
 
   // Do post-processing
-  Object.keys(Sites).forEach(function(qid) { postProcessRecord(qid) });
+  Object.keys(Sites).forEach(qid => { postProcessRecord(qid) });
 
   // If there is a permalinked site, re-initialize the map view
   let fragment = window.location.hash.replace('#', '');
@@ -56,8 +56,8 @@ function processWikidataQuery() {
 }
 
 
-// This takes a query result and its corresponding record and updates that
-// record with any new data provided in the result.
+// Given a query result and its corresponding record,
+// updates that record with any new data provided in the result.
 function processQueryResult(result, record) {
 
   if ('siteLabel' in result && result.siteLabel.value) {
@@ -134,7 +134,7 @@ function processQueryResult(result, record) {
 }
 
 
-// This takes a heritage site QID then cleans up the corresponding record,
+// Given a heritage site QID, cleans up the corresponding record,
 // and generates a map marker and index entry for the heritage site.
 function postProcessRecord(qid) {
 
@@ -157,7 +157,7 @@ function postProcessRecord(qid) {
 
   // Create an index entry and add to the index
   let li = document.createElement('li');
-  li.innerHTML = '<a href="#' + qid + '">' + record.title + '</a>';
+  li.innerHTML = `<a href="#${qid}">${record.title}</a>`;
   record.indexLi = li;
 }
 
@@ -169,7 +169,7 @@ function generateDbIndex() {
   DbIndex = { all: new DbIndexEntry };
 
   // Create index entries
-  Object.keys(DESIGNATION_TYPES).forEach(function(typeQid) {
+  Object.keys(DESIGNATION_TYPES).forEach(typeQid => {
     DbIndex[typeQid] = new DbIndexEntry;
     let orgId = DESIGNATION_TYPES[typeQid].org;
     if (!(orgId in DbIndex)) DbIndex[orgId] = new DbIndexEntry;
@@ -177,31 +177,30 @@ function generateDbIndex() {
 
   // Populate index entries
   Object.keys(Sites)
-    .map(function(siteQid) { return Sites[siteQid] })
-    .forEach(function(record) {
-      DbIndex.all.total++;
-      if (record.mapMarker) DbIndex.all.mapMarkers.push(record.mapMarker);
-      DbIndex.all.indexLis  .push(record.indexLi);
-      Object.keys(record.designations).forEach(function(typeQid) {
-        let orgId = DESIGNATION_TYPES[typeQid].org;
-        DbIndex[typeQid].total++;
-        DbIndex[orgId].total++;
-        if (record.mapMarker) {
-          DbIndex[typeQid].mapMarkers.push(record.mapMarker);
-          DbIndex[orgId].mapMarkers.push(record.mapMarker);
-        }
-        DbIndex[typeQid].indexLis  .push(record.indexLi);
-        DbIndex[orgId].indexLis  .push(record.indexLi);
-      });
-    }
-  );
+  .map(siteQid => Sites[siteQid])
+  .forEach(record => {
+    DbIndex.all.total++;
+    if (record.mapMarker) DbIndex.all.mapMarkers.push(record.mapMarker);
+    DbIndex.all.indexLis  .push(record.indexLi);
+    Object.keys(record.designations).forEach(typeQid => {
+      let orgId = DESIGNATION_TYPES[typeQid].org;
+      DbIndex[typeQid].total++;
+      DbIndex[orgId].total++;
+      if (record.mapMarker) {
+        DbIndex[typeQid].mapMarkers.push(record.mapMarker);
+        DbIndex[orgId].mapMarkers.push(record.mapMarker);
+      }
+      DbIndex[typeQid].indexLis  .push(record.indexLi);
+      DbIndex[orgId].indexLis  .push(record.indexLi);
+    });
+  });
 
-  // Sort list items for panel index
-  Object.keys(DbIndex).forEach(function(key) {
+  // Sort list items for panel index (using Schwartzian transform)
+  Object.keys(DbIndex).forEach(key => {
     DbIndex[key].indexLis = DbIndex[key].indexLis
-      .map(function(li) { return { sortKey: li.textContent, item: li } })
-      .sort(function(a, b) { return a.sortKey > b.sortKey ? 1 : -1 })
-      .map(function(dict) { return dict.item });
+    .map(li => [li, li.textContent])
+    .sort((a, b) => a[1] > b[1] ? 1 : -1)
+    .map(item => item[0]);
   });
 }
 
@@ -215,37 +214,39 @@ function generateFilter() {
   select.options[0].textContent += DbIndex.all.total;
   let optgroup;
   Object.keys(DESIGNATION_TYPES)
-    .map(function(qid) { return { sortKey: DESIGNATION_TYPES[qid].order, item: qid } })
-    .sort(function(a, b) { return a.sortKey - b.sortKey })
-    .map(function(dict) { return dict.item })
-    .forEach(function(qid) {
-      if (DESIGNATION_TYPES[qid].order % 100 === 1) {
-        optgroup = document.createElement('optgroup');
-        optgroup.label = ORGS[DESIGNATION_TYPES[qid].org];
-        select.appendChild(optgroup);
-      }
-      let option = document.createElement('option');
-      option.value = qid;
-      option.textContent = DESIGNATION_TYPES[qid].name + ' – ' + DbIndex[qid].total;
-      optgroup.appendChild(option);
+  .map(qid => [qid, DESIGNATION_TYPES[qid].order])  // Schwartzian transform
+  .sort((a, b) => a[1] - b[1])
+  .map(item => item[0])
+  .forEach(qid => {
+    let type = DESIGNATION_TYPES[qid];
+    if (type.order % 100 === 1) {
+      optgroup = document.createElement('optgroup');
+      optgroup.label = ORGS[type.org];
+      select.appendChild(optgroup);
     }
-  );
+    let option = document.createElement('option');
+    option.value = qid;
+    option.textContent = type.name + ' – ' + DbIndex[qid].total;
+    optgroup.appendChild(option);
+  });
 
   // Add event handler to activate the filtering
-  select.addEventListener('change', function(el) {
+  select.addEventListener('change', el => {
     let qid = select.options[select.selectedIndex].value;
     Cluster.clearLayers();
     Cluster.addLayers(DbIndex[qid].mapMarkers);
     if (AppIsInitialized) Map.fitBounds(Cluster.getBounds());
     let ol = document.getElementById('index-list');
     ol.innerHTML = '';
-    DbIndex[qid].indexLis.forEach(function(li) { ol.appendChild(li) });
+    DbIndex[qid].indexLis.forEach(li => { ol.appendChild(li) });
     select.blur();
   });
 }
 
 
-// TODO
+// Given a URL fragment, checks if it is the QID of a valid heritage site
+// and activates the display of that site if so.
+// Returns true if the fragment is valid and false otherwise.
 function processFragment(fragment) {
   if (!(fragment in Sites)) return false;
   activateSite(fragment);
@@ -253,9 +254,9 @@ function processFragment(fragment) {
 }
 
 
-// This takes a heritage site QID and updates the map to show the
-// corresponding map marker, opens its popup if it isn't open yet, and
-// displays the site's details on the side panel.
+// Given a heritage site QID, updates the map to show the corresponding
+// map marker, opens its popup if it isn't open yet, and displays the heritage
+// site's details on the side panel.
 function activateSite(qid) {
   displayRecordDetails(qid);
   let record = Sites[qid];
@@ -263,25 +264,28 @@ function activateSite(qid) {
     // TODO: enhance in the future to show all sites
   }
   else {
-    Cluster.zoomToShowLayer(record.mapMarker, function() {
-      Map.setView([record.lat, record.lon], Map.getZoom());
-      if (!record.popup.isOpen()) {
-        record.mapMarker.openPopup();
-      }
-    });
+    Cluster.zoomToShowLayer(
+      record.mapMarker,
+      function() {
+        Map.setView([record.lat, record.lon], Map.getZoom());
+        if (!record.popup.isOpen()) record.mapMarker.openPopup();
+      },
+    );
   }
 }
 
 
-// This function displays the heritage site's details on the side panel.
+// Displays the heritage site's details on the side panel.
 function displayRecordDetails(qid) {
   // TODO: Fix double-calling of this function
 
   let record = Sites[qid];
 
+  // Set URL hash and window title
   window.location.hash = '#' + qid;
   document.title = record.title + ' – ' + BASE_TITLE;
 
+  // Update panel
   if (!record.panelElem) generateSiteDetails(qid, record);
   displayPanelContent('details');
   let detailsElem = document.querySelector('#details');
@@ -291,68 +295,78 @@ function displayRecordDetails(qid) {
 }
 
 
-// This generates the details content of a heritage site for the side panel.
+// Generates the details content of a heritage site for the side panel.
 function generateSiteDetails(qid, record) {
 
-  let titleHtml = '<h1>' + record.title + '</h1>';
+  let titleHtml = `<h1>${record.title}</h1>`;
 
-  let figureHtml = '';
-  if (record.imageFilename) {
-    figureHtml = '<figure><div class="loader"></div></figure>';
-  }
-  else {
-    figureHtml = '<figure class="nodata">No photo available</figure>';
-  }
+  let figureHtml = generateFigure(record.imageFilename);
 
   let articleHtml;
   if (record.articleTitle) {
     articleHtml = '<div class="article main-text loading"><div class="loader"></div></div>';
   }
   else {
-    articleHtml = '<div class="article main-text nodata"><p>This historical site has no Wikipedia article.</p></div>';
+    articleHtml = '<div class="article main-text nodata"><p>This heritage site has no Wikipedia article yet.</p></div>';
   }
 
   let designationsHtml = '<h2>Designations</h2><ul class="designations">';
   Object.keys(record.designations)
-    .map(function(qid) { return { sortKey: DESIGNATION_TYPES[qid].order, item: qid } })
-    .sort(function(a, b) { return a.sortKey - b.sortKey })
-    .map(function(dict) { return dict.item })
-    .forEach(function(designationQid) {
-      let type = DESIGNATION_TYPES[designationQid];
-      let designation = record.designations[designationQid];
-      let declarationHtml = '';
-      if (designation.declarationData) {
-        declarationHtml = '<p>Declaration – <i>' + designation.declarationTitle + '</i>';
-        declarationHtml += designation.date ? '; approved ' + designation.date : '';
-        declarationHtml += '</p>';
-        declarationHtml += '<div class="wikilinks">';
-        declarationHtml += '<p><a href="' + designation.declarationData + '" title="">';
-        declarationHtml += '<img src="img/wikidata_tiny_logo.png" alt="" />';
-        declarationHtml += '<span>View details in Wikidata</span></a></p>';
-        if (designation.declarationText) {
-          declarationHtml += '<p><a href="' + designation.declarationText + '" title="">';
-          declarationHtml += '<img src="img/wikisource_tiny_logo.png" alt="" />';
-          declarationHtml += '<span>Read declaration text on Wikisource</span></a></p>';
-        }
-        if (designation.declarationScan) {
-          declarationHtml += '<p><a href="' + designation.declarationScan + '" title="">';
-          declarationHtml += '<img src="img/wikicommons_tiny_logo.png" alt="" />';
-          declarationHtml += '<span>View scanned declaration in Wikimedia Commons</span></a></p>';
-        }
-        declarationHtml += '</div>';
-      }
-      else {
-        if (designation.date) declarationHtml = '<p>Declared – ' + designation.date + '</p>';
-      }
-      designationsHtml += '<li><h3>' + type.name + '</h3><div class="org">';
-      designationsHtml += '<img src="img/org_logo_' + type.org.toLowerCase() + '.svg">';
-      designationsHtml += ORGS[type.org] + '</div>' + declarationHtml + '</li>';
+  .map(qid => [qid, DESIGNATION_TYPES[qid].order])  // Schwartzian transform
+  .sort((a, b) => a[1] - b[1])
+  .map(item => item[0])
+  .forEach(designationQid => {
+
+    let type = DESIGNATION_TYPES[designationQid];
+    let designation = record.designations[designationQid];
+
+    let declarationHtml = '';
+    if (designation.declarationData) {
+      declarationHtml =
+        `<p>Declaration – <i>${designation.declarationTitle}</i>` +
+        (designation.date ? '; approved ' + designation.date : '') +
+        '</p>' +
+        '<div class="wikilinks">' +
+          '<p>' +
+            `<a href="${designation.declarationData}" title="">` +
+              '<img src="img/wikidata_tiny_logo.png" alt="">' +
+              '<span>View details in Wikidata</span>' +
+            '</a>' +
+          '</p>';
+      if (designation.declarationText) declarationHtml +=
+        '<p>' +
+          `<a href="${designation.declarationText}" title="">` +
+            '<img src="img/wikisource_tiny_logo.png" alt="">' +
+            '<span>Read declaration text on Wikisource</span>' +
+          '</a>' +
+        '</p>';
+      if (designation.declarationScan) declarationHtml +=
+        '<p>' +
+          `<a href="${designation.declarationScan}" title="">` +
+            '<img src="img/wikicommons_tiny_logo.png" alt="">' +
+            '<span>View scanned declaration in Wikimedia Commons</span>' +
+          '</a>' +
+        '</p>';
+      declarationHtml += '</div>';
     }
-  );
+    else {
+      if (designation.date) declarationHtml = `<p>Declared – ${designation.date}</p>`;
+    }
+
+    designationsHtml +=
+      '<li>' +
+        `<h3>${type.name}</h3>` +
+        '<div class="org">' +
+          `<img src="img/org_logo_${type.org.toLowerCase()}.svg">` +
+          ORGS[type.org] +
+        '</div>' +
+        declarationHtml +
+      '</li>';
+  });
   designationsHtml += '</ul>';
 
   let detailsHtml =
-    '<a class="main-wikidata-link" href="https://www.wikidata.org/wiki/' + qid + '" title="View in Wikidata">' +
+    `<a class="main-wikidata-link" href="https://www.wikidata.org/wiki/${qid}" title="View in Wikidata">` +
     '<img src="img/wikidata_tiny_logo.png" alt="[view Wikidata item]" /></a>' +
     titleHtml +
     figureHtml +
@@ -363,10 +377,8 @@ function generateSiteDetails(qid, record) {
   panelElem.innerHTML = detailsHtml;
   record.panelElem = panelElem;
 
-  // Load lazy content
-  if (record.imageFilename) displayFigure(record.imageFilename, panelElem.querySelector('figure'));
+  // Lazy load Wikipedia article extract
   if (record.articleTitle) displayArticleExtract(record.articleTitle, panelElem.querySelector('.article'));
-
 }
 
 
@@ -386,10 +398,14 @@ function displayArticleExtract(title, elem) {
     function(data) {
       let pageId = Object.keys(data.query.pages)[0];
       let html = data.query.pages[pageId].extract.match(/<p[^]+?<\/p>/)[0];
-      elem.innerHTML = html +
+      elem.innerHTML =
+        html +
         '<p class="wikipedia-link">' +
-        '<a href="https://en.wikipedia.org/wiki/' + escape(title) + '">' +
-        '<img src="img/wikipedia_tiny_logo.png" alt="" /><span>Read more on Wikipedia</span></a></p>';
+          `<a href="https://en.wikipedia.org/wiki/${encodeURIComponent(title)}">` +
+            '<img src="img/wikipedia_tiny_logo.png" alt="" />' +
+            '<span>Read more on Wikipedia</span>' +
+          '</a>' +
+        '</p>';
       elem.classList.remove('loading');
     }
   );
@@ -408,23 +424,26 @@ function queryOsm(qid) {
     loadJsonp(
       'https://overpass-api.de/api/interpreter',
       {
-        data: '[out:json][timeout:25];(way["wikidata"="' + qid + '"];relation["wikidata"="' + qid + '"];);out body;>;out skel qt;',
+        data: `[out:json][timeout:25];(way["wikidata"="${qid}"];relation["wikidata"="${qid}"];);out body;>;out skel qt;`,
       },
       function(data) {
         let geoJson = osmtogeojson(data);
         if (!geoJson || geoJson.features.length === 0) return;
-        let shapeLayer = L.geoJSON(geoJson, {
-          style: {
-            color     : '#ff3333',
-            opacity   : 0.7,
-            fill      : true,
-          }
-        });
+        let shapeLayer = L.geoJSON(
+          geoJson,
+          {
+            style: {
+              color     : '#ff3333',
+              opacity   : 0.7,
+              fill      : true,
+            },
+          },
+        );
         Sites[qid].shapeLayer = shapeLayer;
         shapeLayer.addTo(Map);
         Map.fitBounds(shapeLayer.getBounds());
       },
-      'jsonp'
+      'jsonp',
     )
   }
 }

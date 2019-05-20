@@ -241,6 +241,11 @@ nav li.selected a:hover {
   width: 150px;
 }
 
+#details figure img.loading {
+  height: 100px;
+  background: #eee;
+}
+
 #details figcaption {
   display: block;
   padding: 5px 0 0 0;
@@ -274,7 +279,8 @@ nav li.selected a:hover {
   margin: 0 auto;
 }
 
-#details .main-text.nodata {
+#details .main-text.nodata,
+#details .main-text .nodata {
   font-style: italic;
   color: #888;
 }

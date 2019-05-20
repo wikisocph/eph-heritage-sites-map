@@ -24,66 +24,65 @@ const DESIGNATION_TYPES = {
   Q20905436 : { org: 'RAMSAR', name: 'Ramsar Site'                  , order: 501 },
   Q4654172  : { org: 'ASEAN' , name: 'ASEAN Heritage Park'          , order: 601 },
 }
-const NL = '\n';
 const SPARQL_QUERY =
-'SELECT ?site ?siteLabel ?coord ?designation ?declared ?declaredPrecision' + NL +
-'       ?declaration ?declarationTitle ?declarationScan ?declarationText' + NL +
-'       ?partSite ?partSiteLabel ?image ?siteArticle WHERE {' + NL +
-'  ?site p:P625 ?coordStatement .' + NL +
-'  ?coordStatement ps:P625 ?coord .' + NL +
-'  OPTIONAL {' + NL +
-'    ?site wdt:P527 ?partSite .' + NL +
-'    ?coordStatement pq:P518 ?coordPart .' + NL +
-'    FILTER (?coordPart = ?partSite)' + NL +
-'  }' + NL +
-'  OPTIONAL { ?site wdt:P18 ?image }' + NL +
-'  {' + NL +
-'    ?site p:P1435 ?designationStatement .' + NL +
-'    ?designationStatement ps:P1435 ?designation .' + NL +
-'    ?site wdt:P1435 ?designation .' + NL +
-'    FILTER (' + NL +
-'      ?designation = wd:Q23677505 ||  # National Historical Landmark' + NL +
-'      ?designation = wd:Q25927302 ||  # National Shrine' + NL +
-'      ?designation = wd:Q36348834 ||  # National Monument' + NL +
-'      ?designation = wd:Q40720162 ||  # Heritage Zone' + NL +
-'      ?designation = wd:Q36352489 ||  # Heritage House' + NL +
-'      ?designation = wd:Q24189292 ||  # National Cultural Treasure' + NL +
-'      ?designation = wd:Q25036854 ||  # Important Cultural Property' + NL +
-'      ?designation = wd:Q25927309     # National Geological Monument' + NL +
-'    )' + NL +
-'  }' + NL +
-'  UNION' + NL +
-'  {' + NL +
-'    ?site p:P1435 ?designationStatement ;' + NL +
-'          wdt:P17 wd:Q928 .' + NL +
-'    ?designationStatement ps:P1435 ?designation .' + NL +
-'    FILTER (' + NL +
-'      ?designation = wd:Q9259     ||  # World Heritage Site' + NL +
-'      ?designation = wd:Q17278671 ||  # tentative World Heritage Site' + NL +
-'      ?designation = wd:Q20905436 ||  # Ramsar Site' + NL +
-'      ?designation = wd:Q4654172      # ASEAN Heritage Park' + NL +
-'    )' + NL +
-'  }' + NL +
-'  OPTIONAL {' + NL +
-'    ?designationStatement pqv:P580 ?declaredValue .' + NL +
-'    ?declaredValue wikibase:timeValue ?declared ;' + NL +
-'                   wikibase:timePrecision ?declaredPrecision .' + NL +
-'  }' + NL +
-'  OPTIONAL {' + NL +
-'    ?designationStatement pq:P457 ?declaration .' + NL +
-'    ?declaration wdt:P1476 ?declarationTitle .' + NL +
-'    OPTIONAL { ?declaration wdt:P996 ?declarationScan }' + NL +
-'    OPTIONAL {' + NL +
-'      ?declarationText schema:about ?declaration ;' + NL +
-'                       schema:isPartOf <https://en.wikisource.org/> .' + NL +
-'    }' + NL +
-'  }' + NL +
-'  OPTIONAL {' + NL +
-'    ?siteArticle schema:about ?site ;' + NL +
-'                 schema:isPartOf <https://en.wikipedia.org/> .' + NL +
-'  }' + NL +
-'  SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }' + NL +
-'}';
+`SELECT ?site ?siteLabel ?coord ?designation ?declared ?declaredPrecision
+       ?declaration ?declarationTitle ?declarationScan ?declarationText
+       ?partSite ?partSiteLabel ?image ?siteArticle WHERE {
+  ?site p:P625 ?coordStatement .
+  ?coordStatement ps:P625 ?coord .
+  OPTIONAL {
+    ?site wdt:P527 ?partSite .
+    ?coordStatement pq:P518 ?coordPart .
+    FILTER (?coordPart = ?partSite)
+  }
+  OPTIONAL { ?site wdt:P18 ?image }
+  {
+    ?site p:P1435 ?designationStatement .
+    ?designationStatement ps:P1435 ?designation .
+    ?site wdt:P1435 ?designation .
+    FILTER (
+      ?designation = wd:Q23677505 ||  # National Historical Landmark
+      ?designation = wd:Q25927302 ||  # National Shrine
+      ?designation = wd:Q36348834 ||  # National Monument
+      ?designation = wd:Q40720162 ||  # Heritage Zone
+      ?designation = wd:Q36352489 ||  # Heritage House
+      ?designation = wd:Q24189292 ||  # National Cultural Treasure
+      ?designation = wd:Q25036854 ||  # Important Cultural Property
+      ?designation = wd:Q25927309     # National Geological Monument
+    )
+  }
+  UNION
+  {
+    ?site p:P1435 ?designationStatement ;
+          wdt:P17 wd:Q928 .
+    ?designationStatement ps:P1435 ?designation .
+    FILTER (
+      ?designation = wd:Q9259     ||  # World Heritage Site
+      ?designation = wd:Q17278671 ||  # tentative World Heritage Site
+      ?designation = wd:Q20905436 ||  # Ramsar Site
+      ?designation = wd:Q4654172      # ASEAN Heritage Park
+    )
+  }
+  OPTIONAL {
+    ?designationStatement pqv:P580 ?declaredValue .
+    ?declaredValue wikibase:timeValue ?declared ;
+                   wikibase:timePrecision ?declaredPrecision .
+  }
+  OPTIONAL {
+    ?designationStatement pq:P457 ?declaration .
+    ?declaration wdt:P1476 ?declarationTitle .
+    OPTIONAL { ?declaration wdt:P996 ?declarationScan }
+    OPTIONAL {
+      ?declarationText schema:about ?declaration ;
+                       schema:isPartOf <https://en.wikisource.org/> .
+    }
+  }
+  OPTIONAL {
+    ?siteArticle schema:about ?site ;
+                 schema:isPartOf <https://en.wikipedia.org/> .
+  }
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+}`;
 const SPARQL_QUERY_ESCAPED = escape(SPARQL_QUERY);
 const WDQS_GUI_URL = 'https://query.wikidata.org/#' + SPARQL_QUERY_ESCAPED;
 
