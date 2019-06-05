@@ -426,23 +426,22 @@ function displayArticleExtract(title, elem) {
 // JSON into GeoJSON and adds it to the map and sets the "shapeLayer" Records
 // field.
 function queryOsm(qid) {
-  loadJsonp(
-    'https://overpass-api.de/api/interpreter',
-    {
-      data: `[out:json][timeout:25];(way["wikidata"="${qid}"];relation["wikidata"="${qid}"];);out body;>;out skel qt;`,
-    },
-    function(data) {
+  let xhr = new XMLHttpRequest();
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState !== xhr.DONE) return;
+    if (xhr.status === 200) {
 
-      let geoJson = osmtogeojson(data);
+      let geoJson = osmtogeojson(JSON.parse(xhr.responseText));
       if (!geoJson || geoJson.features.length === 0) return;
       let shapeLayer = L.geoJSON(
         geoJson,
         {
           style: {
-            color     : '#ff3333',
-            opacity   : 0.7,
-            fill      : true,
+            color   : '#ff3333',
+            opacity : 0.7,
+            fill    : true,
           },
+          filter: feature => feature.geometry.type !== 'Point',
         },
       );
       Records[qid].shapeLayer = shapeLayer;
@@ -451,9 +450,27 @@ function queryOsm(qid) {
       if (window.location.hash.replace('#', '') === qid) {
         Map.fitBounds(shapeLayer.getBounds());
       }
-    },
-    'jsonp',
+    }
+    else {
+      console.log('ERROR loading from Overpass API', xhr);
+    }
+  };
+  xhr.open(
+    'GET',
+    'https://overpass-api.de/api/interpreter?data=' +
+    encodeURIComponent(
+`[out:json][timeout:25];
+(
+  way     ["wikidata"="${qid}"];
+  relation["wikidata"="${qid}"];
+);
+out body;
+>;
+out skel qt;`
+    ),
+    true,
   );
+  xhr.send();
 }
 
 
