@@ -405,10 +405,8 @@ function displayArticleExtract(title, elem) {
       titles    : title,
     },
     function(data) {
-      let pageId = Object.keys(data.query.pages)[0];
-      let html = data.query.pages[pageId].extract.match(/<p[^]+?<\/p>/)[0];
       elem.innerHTML =
-        html +
+        Object.values(data.query.pages)[0].extract.match(/<p[^]+?<\/p>/g).find(text => text.length > 50) +
         '<p class="wikipedia-link">' +
           `<a href="https://en.wikipedia.org/wiki/${encodeURIComponent(title)}">` +
             '<img src="img/wikipedia_tiny_logo.png" alt="" />' +
