@@ -22,7 +22,7 @@ const DESIGNATION_TYPES = {
   Q9259     : { org: 'WHC'   , name: 'World Heritage Site'          , order: 401 },
   Q43113623 : { partOf: 'Q9259' },
   Q17278671 : { org: 'WHC'   , name: 'Tentative World Heritage Site', order: 402 },
-  Q20905436 : { org: 'RAMSAR', name: 'Ramsar Site'                  , order: 501 },
+  Q19683138 : { org: 'RAMSAR', name: 'Ramsar Site'                  , order: 501 },
   Q4654172  : { org: 'ASEAN' , name: 'ASEAN Heritage Park'          , order: 601 },
 }
 const SPARQL_QUERY_0 =
@@ -49,7 +49,7 @@ const SPARQL_QUERY_0 =
       wd:Q9259,      # World Heritage Site
       wd:Q17278671,  # tentative World Heritage Site
       wd:Q43113623,  # part of World Heritage Site
-      wd:Q20905436,  # Ramsar Site
+      wd:Q19683138,  # Ramsar Site
       wd:Q4654172    # ASEAN Heritage Park
     ))
   }
@@ -85,7 +85,7 @@ const SPARQL_QUERY_2 =
     wd:Q9259,      # World Heritage Site
     wd:Q17278671,  # tentative World Heritage Site
     wd:Q43113623,  # part of World Heritage Site
-    wd:Q20905436,  # Ramsar Site
+    wd:Q19683138,  # Ramsar Site
     wd:Q4654172    # ASEAN Heritage Park
   ))
   FILTER NOT EXISTS { ?designationStatement pqv:P582 ?endTime }
@@ -145,7 +145,7 @@ const ABOUT_SPARQL_QUERY =
       wd:Q9259,      # World Heritage Site
       wd:Q17278671,  # tentative World Heritage Site
       wd:Q43113623,  # part of World Heritage Site
-      wd:Q20905436,  # Ramsar Site
+      wd:Q19683138,  # Ramsar Site
       wd:Q4654172    # ASEAN Heritage Park
     ))
   }
